@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     `;
 
     let result;
-    const fallbacks = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
+    const fallbacks = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest", "gemini-1.5-flash", "gemini-pro"];
     
     for (const modelName of fallbacks) {
       try {
