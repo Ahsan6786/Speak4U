@@ -61,25 +61,24 @@ export async function POST(req: Request) {
     `;
 
     let result;
-    const fallbacks = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-flash-latest", "gemini-pro-latest"];
+    const fallbacks = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
     
     for (const modelName of fallbacks) {
       try {
         console.log(`Trying model: ${modelName}`);
-        const model = genAI.getGenerativeModel({ model: modelName });
-        // Try a very simple call first to check model existence
-        const testResult = await model.generateContent("test");
-        if (testResult) {
-          console.log(`Success with ${modelName}`);
-          result = await model.generateContent(systemPrompt);
-          break;
-        }
+        const currentModel = genAI.getGenerativeModel({ model: modelName });
+        result = await currentModel.generateContent(systemPrompt);
+        if (result) break;
       } catch (e: any) {
         console.warn(`Model ${modelName} failed:`, e.message);
         if (modelName === fallbacks[fallbacks.length - 1]) throw e;
       }
     }
     
+    if (!result) {
+      throw new Error("Failed to generate content with any available model");
+    }
+
     const response = await result.response;
     const text = response.text();
     
