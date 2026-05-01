@@ -112,6 +112,7 @@ export default function ReportsClient() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[9px] font-black uppercase tracking-widest text-primary">Topic</span>
+                          {session.isRapidFire && <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-[8px] font-black uppercase shadow-lg shadow-red-500/20">Rapid Fire</span>}
                           {session.brutalMode && <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 text-[8px] font-black uppercase">Strict</span>}
                         </div>
                         <h4 className="font-bold text-lg italic text-foreground/90 leading-tight line-clamp-1 group-hover:text-foreground transition-colors">

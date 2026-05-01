@@ -53,6 +53,8 @@ interface FeedbackData {
   filler_words_detected: number;
   pace_feedback: string;
   vocab_words: { word: string; meaning: string }[];
+  per_answer_summaries?: string[];
+  ideal_answers?: string[];
 }
 
 export default function ResultsClient() {
@@ -71,7 +73,7 @@ export default function ResultsClient() {
     const doc = new jsPDF();
     
     doc.setFontSize(22);
-    doc.text("SpeakMirror Performance Audit", 20, 20);
+    doc.text("REVIAL Performance Audit", 20, 20);
     doc.setFontSize(10);
     doc.text(`Generated on ${new Date().toLocaleDateString()}`, 20, 28);
     
@@ -119,7 +121,7 @@ export default function ResultsClient() {
     const splitBetter = doc.splitTextToSize(`"${data.better_version}"`, 170);
     doc.text(splitBetter, 20, yPos);
 
-    doc.save(`SpeakMirror_Audit_${new Date().getTime()}.pdf`);
+    doc.save(`REVIAL_Audit_${new Date().getTime()}.pdf`);
   };
 
   useEffect(() => {
@@ -134,6 +136,8 @@ export default function ResultsClient() {
 
       const transcript = sessionStorage.getItem("last_transcript");
       const prompt = sessionStorage.getItem("last_prompt");
+      const isRapidFire = sessionStorage.getItem("is_rapid_fire") === "true";
+      const rapidFireData = JSON.parse(sessionStorage.getItem("rapid_fire_data") || "[]");
       const cachedResult = sessionStorage.getItem("last_result");
 
       if (!transcript || !prompt) {
@@ -152,10 +156,15 @@ export default function ResultsClient() {
 
       setLoading(true);
       try {
-        const response = await fetch("/api/analyze", {
+        const endpoint = isRapidFire ? "/api/analyze-rapid" : "/api/analyze";
+        const body = isRapidFire 
+          ? { answers: rapidFireData, brutalMode }
+          : { transcript, prompt, brutalMode };
+
+        const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ transcript, prompt, brutalMode }),
+          body: JSON.stringify(body),
         });
 
         if (response.ok) {
@@ -176,7 +185,8 @@ export default function ResultsClient() {
             transcript,
             feedback,
             timestamp: serverTimestamp(),
-            brutalMode
+            brutalMode,
+            isRapidFire
           });
 
           const todayStr = new Date().toDateString();
@@ -327,16 +337,22 @@ export default function ResultsClient() {
               <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
                 <MessageSquare className="w-5 h-5" />
               </div>
-              <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary">Original Transcript</h3>
+              <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary">
+                {typeof window !== 'undefined' && sessionStorage.getItem("is_rapid_fire") === "true" ? "Rapid Fire Round (6 Questions)" : "Original Transcript"}
+              </h3>
             </div>
-            <p className="text-2xl md:text-4xl text-foreground font-medium leading-[1.4] italic tracking-tight relative z-10">
-              "{typeof window !== 'undefined' ? sessionStorage.getItem("last_transcript") : ""}"
+            <p className="text-2xl md:text-3xl text-foreground font-medium leading-[1.4] italic tracking-tight relative z-10">
+              {typeof window !== 'undefined' && sessionStorage.getItem("is_rapid_fire") === "true" 
+                ? JSON.parse(sessionStorage.getItem("rapid_fire_data") || "[]").map((d: any, i: number) => `Q${i+1}: ${d.q}`).join(" | ")
+                : `"${typeof window !== 'undefined' ? sessionStorage.getItem("last_transcript") : ""}"`
+              }
             </p>
           </div>
         </motion.section>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 space-y-10">
+            {/* OVERALL FEEDBACK */}
             <motion.section 
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -349,11 +365,11 @@ export default function ResultsClient() {
                 
                 <div className="flex items-center gap-4 mb-8">
                   <div className="w-14 h-14 rounded-[1.2rem] bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-                    <MessageSquare className="w-6 h-6" />
+                    <TrendingUp className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-3xl font-black tracking-tight italic">My Thoughts</h3>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">Coaching Verdict</p>
+                    <h3 className="text-3xl font-black tracking-tight italic">Performance Audit</h3>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">Comprehensive Verdict</p>
                   </div>
                 </div>
                 
@@ -369,10 +385,92 @@ export default function ResultsClient() {
               </div>
             </motion.section>
 
+            {/* RAPID FIRE BREAKDOWN */}
+            {typeof window !== 'undefined' && sessionStorage.getItem("is_rapid_fire") === "true" && data?.per_answer_summaries && (
+              <motion.section 
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="space-y-12"
+              >
+                <div className="flex items-center justify-between px-4 border-l-4 border-yellow-500 py-3 bg-yellow-500/5 rounded-r-2xl">
+                  <div className="space-y-1">
+                    <h3 className="text-2xl font-black italic tracking-tight text-foreground">Rapid Fire Drill Report</h3>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Expert Performance Audit</p>
+                  </div>
+                  <Sparkles className="w-6 h-6 text-yellow-500" />
+                </div>
+
+                <div className="space-y-12">
+                  {JSON.parse(sessionStorage.getItem("rapid_fire_data") || "[]").map((round: any, i: number) => (
+                    <motion.div 
+                      key={i}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.1 * i }}
+                      className="group bg-card border-2 border-yellow-500/20 rounded-[3rem] overflow-hidden shadow-xl shadow-yellow-500/5 dark:shadow-black/20"
+                    >
+                      {/* Header */}
+                      <div className="bg-yellow-500/5 px-8 py-6 border-b-2 border-yellow-500/10 flex items-center gap-5">
+                        <div className="w-10 h-10 rounded-2xl bg-yellow-500 text-white flex items-center justify-center text-xs font-black italic shadow-lg shadow-yellow-500/20">
+                          {i+1}
+                        </div>
+                        <h4 className="text-xl font-bold tracking-tight text-foreground/90">"{round.q}"</h4>
+                      </div>
+
+                      <div className="p-8 md:p-10 space-y-10">
+                        {/* Comparison Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Your Response</span>
+                            </div>
+                            <div className="p-6 rounded-[2rem] bg-muted/20 border border-border/50 italic text-foreground/80 leading-relaxed text-base md:text-lg">
+                              "{round.a || "No response recorded."}"
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-primary" />
+                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Expert Standard</span>
+                            </div>
+                            <div className="p-6 rounded-[2rem] bg-primary/5 border-2 border-primary/10 relative italic text-primary font-bold leading-relaxed text-base md:text-lg">
+                              <div className="absolute top-4 right-4">
+                                <Sparkles className="w-5 h-5 text-primary/30" />
+                              </div>
+                              "{data.ideal_answers?.[i] || "Perfecting response..."}"
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Coaching Logic */}
+                        <div className="p-6 rounded-[2rem] bg-yellow-500/10 border border-yellow-500/20 shadow-inner">
+                           <div className="flex items-start gap-4">
+                            <div className="p-3 rounded-2xl bg-yellow-500 text-white shadow-lg shadow-yellow-500/20">
+                              <Lightbulb className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1.5 pt-1">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-yellow-600 dark:text-yellow-400">Expert Coaching Insight</span>
+                              <p className="text-sm md:text-base text-foreground/80 font-semibold leading-relaxed">
+                                {data.per_answer_summaries[i]}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.section>
+            )}
+
+            {/* REFINED VERSION */}
             <motion.section 
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.6 }}
               className="group relative"
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-primary/20 to-purple-500/20 rounded-[3rem] blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000" />
@@ -380,7 +478,7 @@ export default function ResultsClient() {
                 <div className="flex items-center justify-between mb-12">
                    <div className="flex items-center gap-3">
                     <Sparkles className="w-5 h-5 text-primary" />
-                    <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary">Refined Delivery</h3>
+                    <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary">Expert Re-Delivery</h3>
                   </div>
                 </div>
                 <p className="text-3xl md:text-5xl text-foreground italic font-serif leading-[1.3] tracking-tight">

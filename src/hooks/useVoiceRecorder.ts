@@ -93,12 +93,18 @@ export function useVoiceRecorder() {
     }
   }, []);
 
+  const clearTranscript = useCallback(() => {
+    setTranscript("");
+    setAudioBlob(null);
+  }, []);
+
   return {
     isRecording,
     transcript,
     audioBlob,
     startRecording,
     stopRecording,
+    clearTranscript,
     requestPermission,
   };
 }

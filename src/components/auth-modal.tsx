@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Mail, Lock, LogIn, ArrowRight, Sparkles } from "lucide-react";
+import { X, Mail, Lock, LogIn, ArrowRight } from "lucide-react";
 import { useAuth } from "./auth-provider";
-import { cn } from "@/lib/utils";
 
 export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const router = useRouter();
@@ -58,92 +57,88 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
           />
 
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            initial={{ scale: 0.95, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-md glass-card rounded-[2.5rem] p-8 md:p-10 overflow-hidden"
+            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="relative w-full max-w-md bg-black border border-zinc-800 rounded-[2.5rem] p-8 md:p-10 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]"
           >
             <div className="absolute top-0 right-0 p-6">
-              <button onClick={onClose} className="p-2 rounded-xl hover:bg-muted transition-colors">
-                <X className="w-5 h-5 text-muted-foreground" />
+              <button onClick={onClose} className="p-2 rounded-full hover:bg-zinc-800 transition-colors">
+                <X className="w-5 h-5 text-zinc-400" />
               </button>
             </div>
 
-            <div className="flex flex-col items-center text-center mb-10">
-              <div className="w-16 h-16 blue-gradient rounded-2xl flex items-center justify-center blue-glow mb-6">
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-              <h2 className="text-3xl font-black tracking-tight mb-2">
-                {isLogin ? "Welcome Back" : "Join the Elite"}
+            <div className="flex flex-col items-center text-center mb-8">
+              <img src="/splash.png" alt="REVIAL Logo" className="w-32 h-32 object-contain mb-2" />
+              <h2 className="text-3xl font-black tracking-tight text-white">
+                {isLogin ? "Welcome Back." : "Create Account."}
               </h2>
-              <p className="text-muted-foreground font-medium">
-                {isLogin ? "Sign in to continue your journey." : "Start your path to vocal mastery."}
-              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 mb-8">
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                 <input
                   type="email"
                   placeholder="Email Address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-muted/50 border border-border rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary outline-none transition-all"
+                  className="w-full bg-[#111111] border border-zinc-800 text-white placeholder:text-zinc-500 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
                   required
                 />
               </div>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                 <input
                   type="password"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-muted/50 border border-border rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary outline-none transition-all"
+                  className="w-full bg-[#111111] border border-zinc-800 text-white placeholder:text-zinc-500 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
                   required
                 />
               </div>
 
-              {error && <p className="text-red-500 text-sm font-medium text-center">{error}</p>}
+              {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full blue-gradient py-4 rounded-full text-white font-black flex items-center justify-center gap-2 hover:opacity-90 transition-all blue-glow disabled:opacity-50"
+                className="w-full bg-white hover:bg-zinc-100 py-4 rounded-full text-black font-black flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg"
               >
-                {loading ? "PROCESSING..." : isLogin ? "SIGN IN" : "CREATE ACCOUNT"}
+                {loading ? "PROCESSING..." : isLogin ? "SIGN IN" : "CONTINUE"}
                 <ArrowRight className="w-5 h-5" />
               </button>
             </form>
 
             <div className="relative mb-8">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border"></div>
+                <div className="w-full border-t border-zinc-800"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase tracking-widest font-black">
-                <span className="bg-background px-4 text-muted-foreground">OR CONTINUE WITH</span>
+                <span className="bg-black px-4 text-zinc-500">OR</span>
               </div>
             </div>
 
             <button
               onClick={handleGoogle}
               disabled={loading}
-              className="w-full py-3.5 rounded-full border-2 border-gray-400/60 bg-white hover:bg-gray-50 text-[#1f1f1f] font-medium text-lg flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-sm"
+              className="w-full py-4 rounded-full border border-zinc-700 bg-white hover:bg-zinc-100 text-black font-black text-[15px] flex items-center justify-center gap-4 transition-all disabled:opacity-50"
             >
-              <Image src="/google.png" alt="Google" width={30} height={30} className="mr-2" />
+              <Image src="/google.png" alt="Google" width={32} height={32} className="mr-1" />
               {isLogin ? "Sign in with Google" : "Sign up with Google"}
             </button>
 
-            <p className="mt-8 text-center text-sm text-muted-foreground">
-              {isLogin ? "New to SpeakMirror?" : "Already have an account?"}{" "}
+            <p className="mt-8 text-center text-sm text-zinc-400 font-medium">
+              {isLogin ? "New to REVIAL?" : "Already have an account?"}{" "}
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-primary font-bold hover:underline"
+                className="text-white font-black hover:text-blue-400 transition-colors"
               >
                 {isLogin ? "Sign Up" : "Sign In"}
               </button>

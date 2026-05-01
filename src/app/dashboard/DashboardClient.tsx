@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward } from "lucide-react";
+import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2 } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -16,7 +16,7 @@ import { doc, setDoc, onSnapshot, collection, query, orderBy, limit, deleteDoc }
 export default function DashboardClient() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
-  const { isRecording, transcript, startRecording, stopRecording, audioBlob, requestPermission } = useVoiceRecorder();
+  const { isRecording, transcript, startRecording, stopRecording, clearTranscript, audioBlob, requestPermission } = useVoiceRecorder();
   const [timeLeft, setTimeLeft] = useState(60);
   const [prompt, setPrompt] = useState("");
   const [streak, setStreak] = useState(0);
@@ -28,13 +28,19 @@ export default function DashboardClient() {
   const [assistMode, setAssistMode] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isFetchingAssist, setIsFetchingAssist] = useState(false);
+  const [isFetchingQuestion, setIsFetchingQuestion] = useState(false);
+  const [isRapidFire, setIsRapidFire] = useState(false);
+  const [rapidFireStep, setRapidFireStep] = useState(0);
+  const [rapidFireAnswers, setRapidFireAnswers] = useState<{q: string, a: string}[]>([]);
   const searchParams = useSearchParams();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
-  const fetchNewQuestion = async () => {
+  const fetchNewQuestion = async (force = false) => {
+    if (isFetchingQuestion && !force) return;
+    setIsFetchingQuestion(true);
     try {
       const history = JSON.parse(sessionStorage.getItem("question_history") || "[]");
       const response = await fetch("/api/generate-question", {
@@ -44,20 +50,36 @@ export default function DashboardClient() {
       });
       const data = await response.json();
       setPrompt(data.question);
-      
+
       const newHistory = [data.question, ...history].slice(0, 5);
       sessionStorage.setItem("question_history", JSON.stringify(newHistory));
     } catch (err) {
       console.error("Failed to fetch question:", err);
-      setPrompt("Describe a challenge you overcame recently.");
+      if (!prompt) setPrompt("Describe a challenge you overcame recently.");
+    } finally {
+      setIsFetchingQuestion(false);
     }
   };
 
-  const startPractice = async () => {
+  const startPractice = async (rapid = false) => {
     const granted = await requestPermission();
     if (granted) {
-      setView("practice");
-      await fetchNewQuestion();
+      if (rapid) {
+        setIsRapidFire(true);
+        setRapidFireStep(1);
+        setRapidFireAnswers([]);
+        setView("practice");
+        await fetchNewQuestion();
+        // AUTO START RECORDING FOR RAPID FIRE
+        setTimeout(() => {
+          handleStart();
+        }, 800); 
+      } else {
+        setIsRapidFire(false);
+        setRapidFireStep(0);
+        setView("practice");
+        await fetchNewQuestion();
+      }
     } else {
       alert("Microphone access is required to practice. Please enable it in your browser settings.");
     }
@@ -75,9 +97,9 @@ export default function DashboardClient() {
       router.push("/");
       return;
     }
-    
+
     if (!prompt) fetchNewQuestion();
-    
+
     const userDocRef = doc(db, "users", user.uid);
     const unsubUser = onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
@@ -112,16 +134,16 @@ export default function DashboardClient() {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0 || !isRecording) {
+    } else if (timeLeft === 0 && isRecording) {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (timeLeft === 0 && isRecording) {
-        stopRecording();
-      }
+      handleFinish();
+    } else if (!isRecording) {
+      if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isRecording, timeLeft, stopRecording]);
+  }, [isRecording, timeLeft]);
 
   useEffect(() => {
     if (!isRecording || !assistMode || !transcript || transcript.length < 10) return;
@@ -170,21 +192,59 @@ export default function DashboardClient() {
   };
 
   const handleFinish = async () => {
+    if (isAnalyzing) return;
     if (isRecording) stopRecording();
     setIsAnalyzing(true);
 
     try {
+      const currentAnswer = { q: prompt, a: transcript };
+
+      if (isRapidFire && rapidFireStep < 6) {
+        setRapidFireAnswers(prev => [...prev, currentAnswer]);
+        const nextStep = rapidFireStep + 1;
+        setRapidFireStep(nextStep);
+        setIsAnalyzing(false);
+        setTimeLeft(60);
+        
+        // INSTANT TRANSITION
+        stopRecording(); 
+        clearTranscript();
+        await fetchNewQuestion(true);
+        
+        // AUTO-START NEXT RECORDING IMMEDIATELY
+        setTimeout(() => {
+          startRecording();
+        }, 100); 
+        return;
+      }
+
+      // Final step
+      const allAnswers = isRapidFire 
+        ? [...rapidFireAnswers, currentAnswer]
+        : [currentAnswer];
+
       sessionStorage.setItem("last_transcript", transcript);
       sessionStorage.setItem("last_prompt", prompt);
+      sessionStorage.setItem("is_rapid_fire", isRapidFire ? "true" : "false");
+      sessionStorage.setItem("rapid_fire_data", JSON.stringify(allAnswers));
       
+      if (isRapidFire) {
+        setIsAnalyzing(false);
+        setRapidFireStep(7); 
+        stopRecording();
+        return;
+      }
+
       if (audioBlob) {
         const reader = new FileReader();
         reader.onloadend = () => {
           sessionStorage.setItem("last_audio", reader.result as string);
+          fetchNewQuestion(true);
           router.push("/results");
         };
         reader.readAsDataURL(audioBlob);
       } else {
+        fetchNewQuestion(true);
         router.push("/results");
       }
     } catch (error) {
@@ -195,11 +255,126 @@ export default function DashboardClient() {
 
   if (authLoading || dataLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
           <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-muted-foreground font-bold animate-pulse uppercase tracking-widest text-xs">Preparing Dashboard</p>
+          <p className="text-muted-foreground font-black animate-pulse uppercase tracking-[0.3em] text-[10px]">REVIAL Engine Loading</p>
         </div>
+      </div>
+    );
+  }
+
+  // --- RAPID FIRE FULLSCREEN MODE ---
+  if (view === "practice" && isRapidFire && rapidFireStep <= 6) {
+    return (
+      <div className="fixed inset-0 z-[200] bg-[#000000] text-white flex flex-col items-center justify-between p-8 md:p-20 overflow-hidden font-sans">
+        {/* Top: Progress */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-4xl flex items-center justify-between"
+        >
+          <div className="flex flex-col gap-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500">Rapid Fire Drill</span>
+            <h3 className="text-xl font-bold tracking-tighter">Question {rapidFireStep} of 6</h3>
+          </div>
+          <div className="flex gap-1">
+            {[1,2,3,4,5,6].map(s => (
+              <div key={s} className={cn("h-1.5 w-8 rounded-full transition-all duration-500", s <= rapidFireStep ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-white/10")} />
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Center: Question */}
+        <div className="w-full max-w-5xl text-center flex flex-col items-center justify-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={prompt}
+              initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -30, filter: "blur(10px)" }}
+              transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
+              className="space-y-12"
+            >
+              <h2 className="text-4xl md:text-7xl font-black leading-[1.1] tracking-tight italic">
+                "{prompt}"
+              </h2>
+              {isRecording && (
+                <div className="flex flex-col items-center gap-6">
+                   <div className="flex items-center gap-4 text-red-500 font-black text-xl tracking-tighter animate-pulse">
+                    <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                    {timeLeft}s REMAINING
+                  </div>
+                  <p className="text-white/40 text-lg md:text-2xl font-medium italic max-w-3xl line-clamp-2">
+                    {transcript || "Listening..."}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom: Actions */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-center gap-8"
+        >
+          {!isRecording && !isAnalyzing ? (
+            <button
+              onClick={handleStart}
+              className="group flex items-center justify-center gap-6 bg-white text-black px-16 py-8 rounded-[2.5rem] font-black text-3xl hover:scale-105 active:scale-95 transition-all shadow-2xl"
+            >
+              <Mic className="w-8 h-8" />
+              START DRILL
+            </button>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center gap-6 w-full justify-center">
+               <button
+                onClick={stopRecording}
+                className="w-full sm:w-auto flex items-center justify-center gap-4 px-10 py-6 rounded-3xl bg-white/5 border-2 border-white/10 text-white/60 font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-95"
+              >
+                <StopCircle className="w-6 h-6" />
+                STOP
+              </button>
+              <button
+                onClick={handleFinish}
+                className="w-full sm:w-auto flex items-center justify-center gap-6 px-16 py-7 rounded-[2.5rem] bg-red-600 text-white font-black text-2xl hover:bg-red-500 hover:scale-105 transition-all shadow-[0_0_50px_rgba(220,38,38,0.3)] active:scale-95"
+              >
+                {rapidFireStep < 6 ? "NEXT QUESTION" : "FINISH DRILL"}
+                <ChevronRight className="w-8 h-8" />
+              </button>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    );
+  }
+
+  // --- FINAL CELEBRATION SCREEN ---
+  if (view === "practice" && rapidFireStep === 7) {
+    return (
+      <div className="fixed inset-0 z-[300] bg-[#000000] text-white flex flex-col items-center justify-center p-8 text-center">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="flex flex-col items-center"
+        >
+          <div className="w-24 h-24 rounded-3xl bg-red-500 flex items-center justify-center mb-10 shadow-[0_0_50px_rgba(239,68,68,0.5)]">
+            <CheckCircle2 className="w-14 h-14 text-white" />
+          </div>
+          <h2 className="text-5xl md:text-7xl font-black mb-6 tracking-tighter italic">DRILL COMPLETE</h2>
+          <p className="text-xl md:text-2xl text-white/50 mb-16 max-w-2xl font-medium">
+            Excellent focus. All 6 responses have been captured. Your performance audit is ready for analysis.
+          </p>
+          <button 
+            onClick={() => router.push("/results")}
+            className="group px-16 py-8 rounded-[3rem] bg-white text-black font-black text-3xl flex items-center justify-center gap-6 hover:scale-105 transition-all shadow-2xl active:scale-95"
+          >
+            SEE YOUR RESULTS
+            <ChevronRight className="w-10 h-10 group-hover:translate-x-2 transition-transform" />
+          </button>
+        </motion.div>
       </div>
     );
   }
@@ -208,11 +383,11 @@ export default function DashboardClient() {
     <div className="min-h-screen bg-background text-foreground p-6 md:p-12 overflow-hidden selection:bg-primary/30 transition-colors duration-300 relative">
       <AnimatePresence>
         {sessionToDelete && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               className="bg-card border border-border p-8 rounded-[2rem] shadow-2xl max-w-md w-full text-center"
             >
@@ -222,13 +397,13 @@ export default function DashboardClient() {
               <h3 className="text-2xl font-black mb-2">Delete Report?</h3>
               <p className="text-muted-foreground mb-8">This action cannot be undone. Are you sure you want to permanently delete this practice report?</p>
               <div className="flex gap-4">
-                <button 
+                <button
                   onClick={() => setSessionToDelete(null)}
                   className="flex-1 py-4 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={confirmDelete}
                   className="flex-1 py-4 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
                 >
@@ -241,11 +416,11 @@ export default function DashboardClient() {
       </AnimatePresence>
       <AnimatePresence>
         {showSignOutConfirm && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               className="bg-card border border-border p-8 rounded-[2rem] shadow-2xl max-w-md w-full text-center"
             >
@@ -255,13 +430,13 @@ export default function DashboardClient() {
               <h3 className="text-2xl font-black mb-2">Sign Out?</h3>
               <p className="text-muted-foreground mb-8">Are you sure you want to sign out of your account?</p>
               <div className="flex gap-4">
-                <button 
+                <button
                   onClick={() => setShowSignOutConfirm(false)}
                   className="flex-1 py-4 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     logout();
                     router.push("/");
@@ -275,14 +450,15 @@ export default function DashboardClient() {
           </motion.div>
         )}
       </AnimatePresence>
-      
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full -mr-64 -mt-64 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] rounded-full -ml-64 -mb-64 pointer-events-none"></div>
+
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[150px] rounded-full -mr-64 -mt-64 pointer-events-none opacity-50"></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/5 blur-[150px] rounded-full -ml-64 -mb-64 pointer-events-none opacity-50"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.03)_0%,transparent_70%)] pointer-events-none"></div>
 
       <div className="max-w-4xl mx-auto relative z-10">
         <div className="flex items-center justify-between mb-12">
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => view === "practice" ? setView("history") : router.push("/")}
               className="w-12 h-12 rounded-2xl bg-card border-2 border-border flex items-center justify-center text-foreground hover:bg-primary hover:text-white hover:border-primary transition-all hover:scale-105 shadow-sm"
               title="Menu"
@@ -290,7 +466,7 @@ export default function DashboardClient() {
               <LayoutGrid className="w-5 h-5" />
             </button>
             <ThemeToggle />
-            <button 
+            <button
               onClick={() => setShowSignOutConfirm(true)}
               className="w-12 h-12 rounded-2xl bg-card border-2 border-border flex items-center justify-center text-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all hover:scale-105 shadow-sm"
               title="Sign Out"
@@ -316,59 +492,101 @@ export default function DashboardClient() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-12"
             >
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 rounded-[2.5rem] p-10 md:p-14 bg-emerald-600 text-white shadow-2xl shadow-emerald-600/20 mb-12 relative overflow-hidden group">
-                <div className="relative z-10">
-                  <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-3 italic">
-                    Hello, {userName || "Speaker"}
-                  </h1>
-                  <p className="text-xl text-emerald-50 font-medium max-w-md leading-relaxed">
-                    Look at your progress below. Ready for more?
-                  </p>
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 via-blue-500/10 to-purple-500/10 rounded-[3rem] blur-2xl opacity-0 group-hover:opacity-40 transition duration-1000" />
+                <div className="relative flex flex-col md:flex-row items-center justify-between gap-10 rounded-[3rem] p-10 md:p-14 bg-card/40 backdrop-blur-xl border border-white/5 shadow-2xl overflow-hidden ring-1 ring-white/10 will-change-transform">
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 blur-[100px] -mr-40 -mt-40" />
+                  
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/70">Session Ready</span>
+                    </div>
+                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-foreground italic leading-none">
+                      Hello, {userName || "Speaker"}
+                    </h1>
+                    <p className="text-xl text-muted-foreground font-medium italic">
+                      Ready to perfect your delivery?
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto relative z-10">
+                    <button 
+                      onClick={() => startPractice(false)}
+                      className="group flex items-center justify-center gap-3 bg-white text-black px-10 py-5 rounded-[2rem] font-black text-xl hover:scale-[1.03] active:scale-95 transition-all shadow-xl shadow-white/5"
+                    >
+                      <Play className="w-6 h-6 fill-current" />
+                      PRACTICE
+                      <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    <button 
+                      onClick={() => startPractice(true)}
+                      className="group flex items-center justify-center gap-3 bg-red-600 text-white px-10 py-5 rounded-[2rem] font-black text-xl hover:bg-red-500 hover:scale-[1.03] active:scale-95 transition-all shadow-xl shadow-red-600/20"
+                    >
+                      <Flame className="w-6 h-6 fill-current" />
+                      RAPID FIRE
+                      <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
                 </div>
-                <button 
-                  onClick={startPractice}
-                  className="relative z-10 w-full md:w-auto group flex items-center justify-center gap-4 bg-white text-emerald-600 px-10 py-6 rounded-[2rem] font-black text-xl hover:bg-emerald-50 transition-all shadow-xl hover:scale-105 active:scale-95"
-                >
-                  <Play className="w-6 h-6 fill-current" />
-                  PRACTICE MORE
-                  <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-16">
-                <Link 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                {/* THE TELEPROMPTER - GOD TIER */}
+                <Link
                   href="/speak-with-me"
-                  className="group relative flex items-center justify-between p-8 rounded-[2.5rem] bg-sky-500 text-white hover:bg-sky-600 transition-all shadow-xl shadow-sky-500/20"
+                  className="group relative flex flex-col items-start p-12 rounded-[4rem] bg-gradient-to-br from-white/[0.08] to-transparent backdrop-blur-xl border border-white/10 hover:border-primary/50 transition-all duration-700 shadow-[0_30px_100px_rgba(0,0,0,0.5)] overflow-hidden will-change-transform"
                 >
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-3xl bg-white/20 text-white flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
-                      <FastForward className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black tracking-tight italic">Speak With Me</h3>
-                      <p className="text-sm text-sky-100 font-medium opacity-90">Teleprompter Challenge</p>
-                    </div>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.15)_0%,transparent_50%)]" />
+                  <div className="absolute -inset-[100%] group-hover:inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out" />
+                  <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-150 transition-transform duration-1000" />
+                  
+                  <div className="relative z-10 w-20 h-20 rounded-[2rem] bg-primary text-white flex items-center justify-center mb-10 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-[0_0_40px_rgba(59,130,246,0.5)]">
+                    <FastForward className="w-10 h-10" />
                   </div>
-                  <div className="w-12 h-12 rounded-2xl bg-white text-sky-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                    <ChevronRight className="w-6 h-6" />
+                  
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-[2px] bg-primary rounded-full" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Challenge Mode</span>
+                    </div>
+                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">THE <br/> TELEPROMPTER</h3>
+                    <p className="text-lg md:text-xl text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
+                      Master the art of <span className="text-primary font-bold">focus</span> under fire.
+                    </p>
+                  </div>
+
+                  <div className="relative z-10 mt-12 flex items-center gap-3 px-8 py-3.5 rounded-full bg-primary text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/30 hover:scale-105 transition-all">
+                    START NOW <ArrowRight className="w-4 h-4" />
                   </div>
                 </Link>
 
-                <Link 
+                {/* PERFORMANCE HISTORY - GOD TIER */}
+                <Link
                   href="/reports"
-                  className="group relative flex items-center justify-between p-8 rounded-[2.5rem] bg-card border-2 border-border hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all shadow-sm"
+                  className="group relative flex flex-col items-start p-12 rounded-[4rem] bg-gradient-to-br from-white/[0.08] to-transparent backdrop-blur-xl border border-white/10 hover:border-emerald-500/50 transition-all duration-700 shadow-[0_30px_100px_rgba(0,0,0,0.5)] overflow-hidden will-change-transform"
                 >
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                      <History className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black tracking-tight italic">Your Reports</h3>
-                      <p className="text-sm text-muted-foreground font-medium">Analytics & Progress</p>
-                    </div>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.15)_0%,transparent_50%)]" />
+                  <div className="absolute -inset-[100%] group-hover:inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out" />
+                  <div className="absolute bottom-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-150 transition-transform duration-1000" />
+                  
+                  <div className="relative z-10 w-20 h-20 rounded-[2rem] bg-emerald-500 text-white flex items-center justify-center mb-10 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500 shadow-[0_0_40px_rgba(16,185,129,0.5)]">
+                    <History className="w-10 h-10" />
                   </div>
-                  <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                    <ChevronRight className="w-6 h-6" />
+                  
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-[2px] bg-emerald-500 rounded-full" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500">Data Vault</span>
+                    </div>
+                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">SPEECH <br/> ANALYTICS</h3>
+                    <p className="text-lg md:text-xl text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
+                      Your journey to <span className="text-emerald-500 font-bold">mastery</span> is mapped here.
+                    </p>
+                  </div>
+
+                  <div className="relative z-10 mt-12 flex items-center gap-3 px-8 py-3.5 rounded-full bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all">
+                    VIEW REPORTS <ArrowRight className="w-4 h-4" />
                   </div>
                 </Link>
               </div>
@@ -381,8 +599,30 @@ export default function DashboardClient() {
               exit={{ opacity: 0, y: -20 }}
             >
               <AnimatePresence mode="wait">
-                {!isRecording && !isAnalyzing && !transcript ? (
+                {rapidFireStep === 7 ? (
                   <motion.div 
+                    key="rapid-fire-finished"
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="glass-card rounded-[2.5rem] p-10 md:p-14 text-center flex flex-col items-center shadow-2xl"
+                  >
+                    <div className="w-20 h-20 rounded-3xl bg-red-500/10 text-red-500 flex items-center justify-center mb-8">
+                      <Flame className="w-10 h-10 fill-current" />
+                    </div>
+                    <h2 className="text-4xl font-black mb-4 italic">Rapid Fire Complete! 🎉</h2>
+                    <p className="text-xl text-muted-foreground mb-12 max-w-lg">
+                      You've successfully powered through 6 intense speaking challenges. Ready to see your comprehensive performance audit?
+                    </p>
+                    <button 
+                      onClick={() => router.push("/results")}
+                      className="w-full sm:w-auto px-12 py-6 rounded-[2rem] bg-red-500 text-white font-black text-2xl flex items-center justify-center gap-4 hover:scale-105 transition-transform shadow-2xl shadow-red-500/20"
+                    >
+                      SEE RESULT
+                      <ChevronRight className="w-8 h-8" />
+                    </button>
+                  </motion.div>
+                ) : !isRecording && !isAnalyzing && !transcript ? (
+                  <motion.div
                     key="prompt-card"
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -392,31 +632,33 @@ export default function DashboardClient() {
                     <div className="absolute top-0 right-0 p-10">
                       <Brain className="w-20 h-20 text-primary opacity-10 group-hover:opacity-20 transition-opacity" />
                     </div>
-                    <div className="flex items-center gap-2 mb-6">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      <span className="text-primary font-black text-xs uppercase tracking-[0.2em]">Goal</span>
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className={cn("px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest", isRapidFire ? "bg-red-500 text-white shadow-lg shadow-red-500/30" : "bg-primary/10 text-primary border border-primary/20")}>
+                        {isRapidFire ? `Rapid Fire: Round ${rapidFireStep}/6` : "Daily Challenge"}
+                      </div>
                     </div>
-                    <h2 className="text-3xl md:text-5xl font-bold mb-10 leading-[1.1] max-w-3xl tracking-tight">
-                      "{prompt}"
-                    </h2>
-                    <div className="flex flex-wrap gap-8 text-muted-foreground items-center justify-between w-full mt-10 border-t border-border/50 pt-8">
-                      <div className="flex gap-8">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-muted border border-border"><Timer className="w-4 h-4 text-foreground" /></div>
-                          <span className="font-bold text-sm uppercase tracking-widest">60 SECONDS</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-muted border border-border"><Mic className="w-4 h-4 text-foreground" /></div>
-                          <span className="font-bold text-sm uppercase tracking-widest">ANALYSIS</span>
-                        </div>
+                    {isFetchingQuestion && !prompt ? (
+                      <div className="space-y-4 mb-10">
+                        <div className="h-12 w-full bg-muted animate-pulse rounded-xl"></div>
+                        <div className="h-12 w-3/4 bg-muted animate-pulse rounded-xl"></div>
+                      </div>
+                    ) : (
+                      <h2 className="text-3xl md:text-5xl font-bold mb-10 leading-[1.1] max-w-3xl tracking-tight min-h-[3.3em]">
+                        "{prompt}"
+                      </h2>
+                    )}
+                    <div className="flex items-center justify-between w-full mt-10 border-t border-border/50 pt-8">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10 border border-primary/20"><Sparkles className="w-4 h-4 text-primary" /></div>
+                        <span className="font-bold text-sm uppercase tracking-widest text-primary"></span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <button 
+                        <button
                           onClick={() => setAssistMode(!assistMode)}
                           className={cn("flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-sm uppercase tracking-widest border", assistMode ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-muted text-muted-foreground border-border hover:bg-muted/80")}
                         >
                           <Wand2 className="w-4 h-4" />
-                          Assist Mode {assistMode ? "ON" : "OFF"}
+                          Expert Guidance {assistMode ? "ON" : "OFF"}
                         </button>
                       </div>
                     </div>
@@ -430,14 +672,14 @@ export default function DashboardClient() {
                     className="min-h-[400px] flex flex-col items-center justify-center text-center px-4"
                   >
                     <div className="relative mb-12">
-                      <motion.div 
+                      <motion.div
                         animate={{ scale: [1, 1.1, 1] }}
                         transition={{ repeat: Infinity, duration: 2 }}
                         className="w-40 h-40 rounded-full blue-gradient flex items-center justify-center blue-glow relative z-10"
                       >
                         <span className="text-5xl font-black text-white">{timeLeft}</span>
                       </motion.div>
-                      <motion.div 
+                      <motion.div
                         animate={{ scale: [1, 1.8], opacity: [0.5, 0] }}
                         transition={{ repeat: Infinity, duration: 1.5 }}
                         className="absolute inset-0 border-4 border-primary rounded-full"
@@ -448,39 +690,32 @@ export default function DashboardClient() {
                     </p>
 
                     <AnimatePresence>
-                      {assistMode && isRecording && (suggestions.length > 0 || isFetchingAssist) && (
+                      {assistMode && isRecording && (
                         <motion.div 
-                          initial={{ opacity: 0, y: 10 }}
+                          initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="flex flex-col items-center mt-8 w-full max-w-3xl"
+                          exit={{ opacity: 0, y: 20 }}
+                          className="fixed bottom-32 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-50"
                         >
-                          <div className="flex items-center gap-3 mb-6">
-                            <div className="relative">
-                              <Wand2 className={cn("w-5 h-5 text-emerald-500", isFetchingAssist ? "animate-spin" : "animate-pulse")} />
-                              {isFetchingAssist && (
-                                <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                              )}
+                          <div className="glass-card p-6 rounded-[2rem] border-primary/30 shadow-2xl flex flex-col items-center gap-4">
+                            <div className="flex items-center gap-3">
+                              <Sparkles className={cn("w-4 h-4 text-primary", isFetchingAssist && "animate-spin")} />
+                              <span className="text-primary font-black text-xs uppercase tracking-[0.2em]">
+                                {isFetchingAssist ? "AI Analysis in progress..." : "Recommended Talk Points"}
+                              </span>
                             </div>
-                            <span className="text-emerald-600 font-black text-sm uppercase tracking-[0.2em]">
-                              {isFetchingAssist ? "Thinking..." : "Live Suggestions"}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap justify-center gap-4">
-                            {suggestions.map((sug, i) => (
-                              <motion.div 
-                                key={i}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.05 }}
-                                className="px-6 py-4 rounded-[1.5rem] bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-lg md:text-xl shadow-xl shadow-emerald-500/5 backdrop-blur-xl"
-                              >
-                                {sug}
-                              </motion.div>
-                            ))}
+                            <div className="flex flex-wrap justify-center gap-3">
+                              {(suggestions.length > 0 ? suggestions : ["Loading points..."]).map((sug, i) => (
+                                <motion.div 
+                                  key={i}
+                                  initial={{ opacity: 0, scale: 0.9 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  className="px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-sm md:text-base whitespace-nowrap"
+                                >
+                                  {sug}
+                                </motion.div>
+                              ))}
+                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -492,52 +727,69 @@ export default function DashboardClient() {
               <div className="flex flex-col items-center justify-center py-8">
                 <AnimatePresence mode="wait">
                   {isRecording ? (
-                    <motion.div 
+                    <motion.div
                       key="recording"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       className="flex flex-col items-center gap-12 w-full"
                     >
-                      <button 
-                        onClick={stopRecording}
-                        className="flex items-center gap-3 px-10 py-5 rounded-2xl bg-red-500 text-white font-bold shadow-2xl shadow-red-500/20 hover:scale-105 transition-transform mt-8"
-                      >
-                        <StopCircle className="w-6 h-6" />
-                        STOP NOW
-                      </button>
+                      <div className="flex flex-col sm:flex-row items-center gap-6 w-full justify-center">
+                        <button
+                          onClick={stopRecording}
+                          className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-5 rounded-2xl bg-red-500/10 text-red-500 border-2 border-red-500/20 font-bold hover:bg-red-500 hover:text-white transition-all shadow-lg active:scale-95"
+                        >
+                          <StopCircle className="w-6 h-6" />
+                          STOP NOW
+                        </button>
+                        {isRapidFire && (
+                          <button
+                            onClick={handleFinish}
+                            className="w-full sm:w-auto flex items-center justify-center gap-3 px-12 py-5 rounded-2xl bg-foreground text-background font-black text-xl hover:scale-105 transition-all shadow-2xl active:scale-95"
+                          >
+                            NEXT QUESTION
+                            <ChevronRight className="w-7 h-7" />
+                          </button>
+                        )}
+                      </div>
                     </motion.div>
                   ) : (
-                    <motion.div 
+                    <motion.div
                       key="start"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       className="flex flex-col items-center gap-10"
                     >
                       {!transcript ? (
-                        <button 
+                        <button
                           onClick={handleStart}
-                          className="w-32 h-32 rounded-[2.5rem] blue-gradient flex items-center justify-center blue-glow hover:scale-110 transition-transform group relative"
+                          className="w-32 h-32 rounded-[2.5rem] blue-gradient flex flex-col items-center justify-center blue-glow hover:scale-110 transition-transform group relative"
                         >
                           <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 rounded-[2.5rem] transition-opacity"></div>
-                          <Mic className="w-12 h-12 text-white group-hover:scale-110 transition-transform" />
+                          <Mic className="w-10 h-10 text-white mb-1 group-hover:scale-110 transition-transform" />
+                          <span className="text-[10px] font-black text-white/80 tracking-widest">60S</span>
                         </button>
                       ) : (
                         <div className="flex flex-col items-center gap-10 w-full max-w-2xl">
                           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full sm:w-auto">
-                            <button 
+                            <button
                               onClick={handleStart}
                               className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-8 py-5 rounded-[1.8rem] bg-card border-2 border-border text-foreground hover:bg-muted hover:border-primary/30 transition-all font-black text-lg shadow-sm active:scale-95"
                             >
                               <RotateCcw className="w-5 h-5" />
                               RETAKE
                             </button>
-                            <button 
+                            <button
                               onClick={handleFinish}
                               disabled={isAnalyzing}
                               className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-10 py-5 rounded-[1.8rem] blue-gradient text-white font-black text-lg blue-glow hover:scale-[1.03] active:scale-95 disabled:opacity-50 transition-all shadow-xl shadow-blue-500/20"
                             >
-                              {isAnalyzing ? "ANALYZING..." : "SEE RESULT"}
+                              {isAnalyzing 
+                                ? "ANALYZING..." 
+                                : isRapidFire 
+                                  ? (rapidFireStep < 6 ? "NEXT QUESTION" : "FINISH ROUND") 
+                                  : "SEE RESULT"
+                              }
                               <ChevronRight className="w-6 h-6" />
                             </button>
                           </div>

@@ -68,7 +68,7 @@ export function InstallPrompt() {
             </div>
             
             <div className="flex-1">
-              <h3 className="font-black text-foreground">Install SpeakMirror</h3>
+              <h3 className="font-black text-foreground">Install REVIAL</h3>
               <p className="text-xs text-muted-foreground mb-4">Install our app for a faster experience and easy access from your home screen.</p>
               
               <button

@@ -10,13 +10,13 @@ import { InstallPrompt } from "@/components/install-prompt";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "SpeakMirror – Daily AI Speaking Coach",
+  title: "REVIAL – Daily AI Speaking Coach",
   description: "Stop hesitating. Start speaking with clarity, structure, and confidence.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "SpeakMirror",
+    title: "REVIAL",
   },
 };
 

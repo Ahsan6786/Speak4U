@@ -18,16 +18,20 @@ export async function POST(req: Request) {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const systemPrompt = `
-      You are a live speaking assistant teleprompter. 
+      You are an expert vocal coach and debate mentor. 
       The user is answering this question: "${prompt}"
       So far, they have said: "${transcript}"
 
-      Your task is to guess the next logical few words to help them continue their thought seamlessly.
-      Provide EXACTLY 3 different short, punchy continuation fragments. 
-      Keep each suggestion between 2 to 4 words maximum.
+      Your task is to provide 3 'Topic Hints' or 'Expert Keywords' that the user should mention next to make their answer more sophisticated and complete.
+      Do NOT try to guess their next words. Instead, suggest high-value concepts or transition themes.
+      
+      Example for a 'Challenge' question: ["Quantifiable Impact", "Personal Growth", "Specific Actions"]
+      Example for a 'Hobbies' question: ["Emotional Connection", "Time Management", "Future Aspirations"]
+
+      Provide EXACTLY 3 suggestions. 
+      Keep each suggestion between 1 to 3 words maximum.
       Do not output anything else. No quotes, no markdown, no conversational filler.
-      Format the output as a valid JSON array of strings. Example:
-      ["and then I", "which led to", "so I decided"]
+      Format the output as a valid JSON array of strings.
     `;
 
     const result = await model.generateContent(systemPrompt);

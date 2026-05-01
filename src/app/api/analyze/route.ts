@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const systemPrompt = `
-      You are a world-class elite communication coach for "SpeakMirror". 
+      You are a world-class elite communication coach for "REVIAL". 
       Your task is to provide a deep, high-impact analysis of the user's speech.
       
       CRITICAL INSTRUCTIONS:

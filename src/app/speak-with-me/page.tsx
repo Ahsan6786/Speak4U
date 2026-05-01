@@ -2,219 +2,233 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Play, Square, FastForward, RotateCcw } from "lucide-react";
+import { ArrowLeft, Play, Pause, RotateCcw, Timer, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 
-const PARAGRAPHS = [
-  "The art of effective communication isn't just about the words you choose, but the rhythm, pace, and clarity with which you deliver them. When you speak slightly faster than your normal conversational cadence, you challenge your brain to process thoughts more rapidly while maintaining precise articulation. This exercise trains your vocal cords to remain steady under pressure and helps eliminate filler words. Keep breathing, stay focused, and let the words flow naturally as they appear before you. Mastery of your own voice is the first step toward leadership, influence, and impact. Every great leader in history was first and foremost a master of the spoken word, using it to move mountains and change minds. As you practice this daily, you will find that your confidence grows exponentially, and your ability to persuade and inspire becomes a natural part of who you are. The journey of a thousand miles begins with a single step, and the journey to vocal mastery begins with a single word spoken with conviction. Do not fear the speed; embrace it. Let the velocity of the text propel your thoughts forward. Clarity is your anchor, and pace is your sail. Navigate the sea of language with the precision of a master mariner. Your voice is a tool, a weapon, and a gift—use it wisely and use it often. The more you speak, the more you learn. The more you learn, the more you grow. The more you grow, the more you can contribute to the world around you. This is the path of the orator, the path of the leader, and the path of the true communicator. " + "The art of effective communication isn't just about the words you choose, but the rhythm, pace, and clarity with which you deliver them. When you speak slightly faster than your normal conversational cadence, you challenge your brain to process thoughts more rapidly while maintaining precise articulation. This exercise trains your vocal cords to remain steady under pressure and helps eliminate filler words. Keep breathing, stay focused, and let the words flow naturally as they appear before you. Mastery of your own voice is the first step toward leadership, influence, and impact. Every great leader in history was first and foremost a master of the spoken word, using it to move mountains and change minds. As you practice this daily, you will find that your confidence grows exponentially, and your ability to persuade and inspire becomes a natural part of who you are. The journey of a thousand miles begins with a single step, and the journey to vocal mastery begins with a single word spoken with conviction. Do not fear the speed; embrace it. Let the velocity of the text propel your thoughts forward. Clarity is your anchor, and pace is your sail. Navigate the sea of language with the precision of a master mariner. Your voice is a tool, a weapon, and a gift—use it wisely and use it often. The more you speak, the more you learn. The more you learn, the more you grow. The more you grow, the more you can contribute to the world around you. This is the path of the orator, the path of the leader, and the path of the true communicator. " + "The art of effective communication isn't just about the words you choose, but the rhythm, pace, and clarity with which you deliver them. When you speak slightly faster than your normal conversational cadence, you challenge your brain to process thoughts more rapidly while maintaining precise articulation. This exercise trains your vocal cords to remain steady under pressure and helps eliminate filler words. Keep breathing, stay focused, and let the words flow naturally as they appear before you. Mastery of your own voice is the first step toward leadership, influence, and impact. Every great leader in history was first and foremost a master of the spoken word, using it to move mountains and change minds. As you practice this daily, you will find that your confidence grows exponentially, and your ability to persuade and inspire becomes a natural part of who you are. The journey of a thousand miles begins with a single step, and the journey to vocal mastery begins with a single word spoken with conviction. Do not fear the speed; embrace it. Let the velocity of the text propel your thoughts forward. Clarity is your anchor, and pace is your sail. Navigate the sea of language with the precision of a master mariner. Your voice is a tool, a weapon, and a gift—use it wisely and use it often. The more you speak, the more you learn. The more you learn, the more you grow. The more you grow, the more you can contribute to the world around you. This is the path of the orator, the path of the leader, and the path of the true communicator.",
-  "Peter Piper picked a peck of pickled peppers. A peck of pickled peppers Peter Piper picked. If Peter Piper picked a peck of pickled peppers, where's the peck of pickled peppers Peter Piper picked? How much wood would a woodchuck chuck if a woodchuck could chuck wood? He would chuck, he would, as much as he could, and chuck as much wood as a woodchuck would if a woodchuck could chuck wood. Betty Botter bought some butter, but she said the butter's bitter. If I put it in my batter, it will make my batter bitter. But a bit of better butter will make my batter better. So 'twas better Betty Botter bought a bit of better butter. She sells seashells by the seashore. The shells she sells are seashells, I'm sure. So if she sells seashells on the seashore, then I'm sure she sells seashore shells. Red leather, yellow leather. Red leather, yellow leather. Red leather, yellow leather. Unique New York. Unique New York. You know New York, you need New York, you know you need unique New York. I slit the sheet, the sheet I slit, and on the slitted sheet I sit. A proper copper coffee pot. A proper copper coffee pot. A proper copper coffee pot. Rubber baby buggy bumpers. Rubber baby buggy bumpers. Rubber baby buggy bumpers. Which witch is which? Which witch is which? Which witch is which? " + "Peter Piper picked a peck of pickled peppers. A peck of pickled peppers Peter Piper picked. If Peter Piper picked a peck of pickled peppers, where's the peck of pickled peppers Peter Piper picked? How much wood would a woodchuck chuck if a woodchuck could chuck wood? He would chuck, he would, as much as he could, and chuck as much wood as a woodchuck would if a woodchuck could chuck wood. Betty Botter bought some butter, but she said the butter's bitter. If I put it in my batter, it will make my batter bitter. But a bit of better butter will make my batter better. So 'twas better Betty Botter bought a bit of better butter. She sells seashells by the seashore. The shells she sells are seashells, I'm sure. So if she sells seashells on the seashore, then I'm sure she sells seashore shells. Red leather, yellow leather. Red leather, yellow leather. Red leather, yellow leather. Unique New York. Unique New York. You know New York, you need New York, you know you need unique New York. I slit the sheet, the sheet I slit, and on the slitted sheet I sit. A proper copper coffee pot. A proper copper coffee pot. A proper copper coffee pot. Rubber baby buggy bumpers. Rubber baby buggy bumpers. Rubber baby buggy bumpers. Which witch is which? Which witch is which? Which witch is which? " + "Peter Piper picked a peck of pickled peppers. A peck of pickled peppers Peter Piper picked. If Peter Piper picked a peck of pickled peppers, where's the peck of pickled peppers Peter Piper picked? How much wood would a woodchuck chuck if a woodchuck could chuck wood? He would chuck, he would, as much as he could, and chuck as much wood as a woodchuck would if a woodchuck could chuck wood. Betty Botter bought some butter, but she said the butter's bitter. If I put it in my batter, it will make my batter bitter. But a bit of better butter will make my batter better. So 'twas better Betty Botter bought a bit of better butter. She sells seashells by the seashore. The shells she sells are seashells, I'm sure. So if she sells seashells on the seashore, then I'm sure she sells seashore shells. Red leather, yellow leather. Red leather, yellow leather. Red leather, yellow leather. Unique New York. Unique New York. You know New York, you need New York, you know you need unique New York. I slit the sheet, the sheet I slit, and on the slitted sheet I sit. A proper copper coffee pot. A proper copper coffee pot. A proper copper coffee pot. Rubber baby buggy bumpers. Rubber baby buggy bumpers. Rubber baby buggy bumpers. Which witch is which? Which witch is which? Which witch is which?",
-  "Imagine standing on the edge of a vast, echoing canyon just as the sun begins to rise. The sky bleeds from deep indigo into vibrant streaks of crimson and gold. As you take a deep breath, the crisp, cold morning air fills your lungs, giving you a sudden burst of clarity and energy. You realize that every challenge you've faced has only prepared you for this moment—the moment where you speak with unwavering confidence, unmatched precision, and absolute certainty. The horizon stretches out before you, endless and full of potential, mirroring the limitless power of your own potential. You are not just a speaker; you are a force of nature, capable of shaping the world with the resonance of your voice and the conviction of your words. Stand tall, speak loud, and let the world hear the truth of your experience. The echoes of your voice will carry across the miles, touching hearts and opening minds that you never thought possible. This is your time. This is your platform. This is your legacy. " + "Imagine standing on the edge of a vast, echoing canyon just as the sun begins to rise. The sky bleeds from deep indigo into vibrant streaks of crimson and gold. As you take a deep breath, the crisp, cold morning air fills your lungs, giving you a sudden burst of clarity and energy. You realize that every challenge you've faced has only prepared you for this moment—the moment where you speak with unwavering confidence, unmatched precision, and absolute certainty. The horizon stretches out before you, endless and full of potential, mirroring the limitless power of your own potential. You are not just a speaker; you are a force of nature, capable of shaping the world with the resonance of your voice and the conviction of your words. Stand tall, speak loud, and let the world hear the truth of your experience. The echoes of your voice will carry across the miles, touching hearts and opening minds that you never thought possible. This is your time. This is your platform. This is your legacy. " + "Imagine standing on the edge of a vast, echoing canyon just as the sun begins to rise. The sky bleeds from deep indigo into vibrant streaks of crimson and gold. As you take a deep breath, the crisp, cold morning air fills your lungs, giving you a sudden burst of clarity and energy. You realize that every challenge you've faced has only prepared you for this moment—the moment where you speak with unwavering confidence, unmatched precision, and absolute certainty. The horizon stretches out before you, endless and full of potential, mirroring the limitless power of your own potential. You are not just a speaker; you are a force of nature, capable of shaping the world with the resonance of your voice and the conviction of your words. Stand tall, speak loud, and let the world hear the truth of your experience. The echoes of your voice will carry across the miles, touching hearts and opening minds that you never thought possible. This is your time. This is your platform. This is your legacy.",
-  "To be, or not to be, that is the question: Whether 'tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles and by opposing end them. To die—to sleep, no more; and by a sleep to say we end the heart-ache and the thousand natural shocks that flesh is heir to: 'tis a consummation devoutly to be wish'd. To die, to sleep; to sleep, perchance to dream—ay, there's the rub: For in that sleep of death what dreams may come, when we have shuffled off this mortal coil, must give us pause. There's the respect that makes calamity of so long life. For who would bear the whips and scorns of time, the oppressor's wrong, the proud man's contumely, the pangs of dispriz'd love, the law's delay, the insolence of office, and the spurns that patient merit of the unworthy takes, when he himself might his quietus make with a bare bodkin? " + "To be, or not to be, that is the question: Whether 'tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles and by opposing end them. To die—to sleep, no more; and by a sleep to say we end the heart-ache and the thousand natural shocks that flesh is heir to: 'tis a consummation devoutly to be wish'd. To die, to sleep; to sleep, perchance to dream—ay, there's the rub: For in that sleep of death what dreams may come, when we have shuffled off this mortal coil, must give us pause. There's the respect that makes calamity of so long life. For who would bear the whips and scorns of time, the oppressor's wrong, the proud man's contumely, the pangs of dispriz'd love, the law's delay, the insolence of office, and the spurns that patient merit of the unworthy takes, when he himself might his quietus make with a bare bodkin? " + "To be, or not to be, that is the question: Whether 'tis nobler in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles and by opposing end them. To die—to sleep, no more; and by a sleep to say we end the heart-ache and the thousand natural shocks that flesh is heir to: 'tis a consummation devoutly to be wish'd. To die, to sleep; to sleep, perchance to dream—ay, there's the rub: For in that sleep of death what dreams may come, when we have shuffled off this mortal coil, must give us pause. There's the respect that makes calamity of so long life. For who would bear the whips and scorns of time, the oppressor's wrong, the proud man's contumely, the pangs of dispriz'd love, the law's delay, the insolence of office, and the spurns that patient merit of the unworthy takes, when he himself might his quietus make with a bare bodkin?"
-];
+// 60-second targeted paragraph (approx 160-180 words)
+const PRACTICE_TEXT = "Public speaking is not merely about the delivery of words, but about the connection you forge with your audience through clarity and conviction. Every great speech begins with a single thought, nurtured by practice and refined by the courage to stand before others and share your truth. As you read these lines, focus on the cadence of your breath and the articulation of each syllable. Mastery of your voice is the most powerful tool you possess, allowing you to move mountains and inspire change in the hearts of those who listen. Do not rush the journey; instead, embrace the rhythm of the language and let the velocity of your thoughts match the steady pace of your delivery. Confidence is not the absence of fear, but the mastery of it. Every pause is a moment of power, and every word is a bridge between your mind and the world. Keep your head high, your shoulders relaxed, and your focus unwavering. You are the architect of your own impact, and with every sentence you complete, you are becoming a more persuasive, authentic, and powerful communicator. Stand tall, speak loud, and let your legacy be written in the resonance of your voice.";
 
-export default function SpeakWithMe() {
-  const [hasStarted, setHasStarted] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-  const [paragraph, setParagraph] = useState("");
-  const [speed, setSpeed] = useState(0.008);
-  const [dimensions, setDimensions] = useState({ containerHeight: 0, contentHeight: 0 });
-  const [isReady, setIsReady] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+export default function TeleprompterPage() {
+  const [stage, setStage] = useState<"countdown" | "active" | "finished">("active");
+  const [result, setResult] = useState<"win" | "lose" | null>(null);
+  const [countdown, setCountdown] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [isPaused, setIsPaused] = useState(false);
+  
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<number>(0);
+  const scrollPosRef = useRef(0);
+  const startTimeRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
 
-  const SPEED_OPTIONS = [
-    { label: "Slow", value: 0.015, color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-    { label: "Normal", value: 0.008, color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-    { label: "Fast", value: 0.005, color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
-    { label: "Extreme", value: 0.0025, color: "bg-red-500/10 text-red-500 border-red-500/20" }
-  ];
+  // Constants
+  const TOTAL_TIME = 60;
+  const SCROLL_SPEED = 1.05; // Base speed, will be tuned to finish in ~58 seconds
 
+  const startChallenge = () => {
+    setStage("active");
+    setTimeLeft(TOTAL_TIME);
+    scrollPosRef.current = 0;
+    setIsPaused(true);
+    setResult(null);
+  };
+
+  const togglePause = () => {
+    setIsPaused(!isPaused);
+  };
+
+  const restart = () => {
+    setStage("active");
+    setTimeLeft(TOTAL_TIME);
+    scrollPosRef.current = 0;
+    setIsPaused(true);
+    setResult(null);
+  };
+
+  // Main Timer and Animation Loop
   useEffect(() => {
-    setParagraph(PARAGRAPHS[Math.floor(Math.random() * PARAGRAPHS.length)]);
-  }, []);
+    if (stage !== "active" || isPaused) {
+      cancelAnimationFrame(requestRef.current);
+      return;
+    }
 
-  // Robust measurement using ResizeObserver
-  useEffect(() => {
-    if (!hasStarted || isFinished || !containerRef.current || !contentRef.current) return;
+    let lastTimestamp = performance.now();
 
-    const container = containerRef.current;
-    const content = contentRef.current;
+    const animate = (time: number) => {
+      const deltaTime = (time - lastTimestamp) / 1000;
+      lastTimestamp = time;
 
-    const observer = new ResizeObserver(() => {
-      const cHeight = content.scrollHeight;
-      const contHeight = container.offsetHeight;
-      
-      if (cHeight > 0 && contHeight > 0) {
-        setDimensions({ containerHeight: contHeight, contentHeight: cHeight });
-        setIsReady(true);
+      // Update Timer (Only every 100ms to reduce render load)
+      setTimeLeft(prev => {
+        const next = prev - deltaTime;
+        if (next <= 0) {
+          setStage("finished");
+          setResult("lose");
+          return 0;
+        }
+        return next;
+      });
+
+      // Update Scroll
+      // Target: contentHeight - viewportHeight
+      if (scrollRef.current) {
+        const contentHeight = scrollRef.current.scrollHeight;
+        const viewportHeight = scrollRef.current.clientHeight;
+        const targetScroll = contentHeight + viewportHeight; // scroll all the way out
+        
+        const speed = (contentHeight / TOTAL_TIME) * SCROLL_SPEED;
+        scrollPosRef.current += speed * deltaTime;
+
+        // Apply GPU accelerated transform
+        scrollRef.current.style.transform = `translateY(-${scrollPosRef.current}px)`;
+
+        if (scrollPosRef.current > contentHeight) {
+          setStage("finished");
+          setResult("win");
+          return;
+        }
       }
-    });
 
-    observer.observe(content);
-    observer.observe(container);
+      requestRef.current = requestAnimationFrame(animate);
+    };
 
-    return () => observer.disconnect();
-  }, [hasStarted, isFinished, paragraph]);
-
-  const handleStart = () => {
-    setIsReady(false);
-    setDimensions({ containerHeight: 0, contentHeight: 0 });
-    setHasStarted(true);
-    setIsFinished(false);
-  };
-
-  const handleReset = () => {
-    setIsReady(false);
-    setHasStarted(false);
-    setIsFinished(false);
-    setDimensions({ containerHeight: 0, contentHeight: 0 });
-    setParagraph(PARAGRAPHS[Math.floor(Math.random() * PARAGRAPHS.length)]);
-  };
+    requestRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(requestRef.current);
+  }, [stage, isPaused]);
 
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col p-4 md:p-8 relative overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 relative z-10 max-w-5xl mx-auto w-full">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-card border-2 border-border text-foreground hover:bg-primary hover:text-white hover:border-primary transition-all font-bold shadow-sm"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Dashboard</span>
+    <div className="fixed inset-0 bg-black text-white font-sans selection:bg-white selection:text-black overflow-hidden flex flex-col">
+      {/* Background Atmosphere */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_0%,transparent_80%)] pointer-events-none" />
+      
+      {/* Top Header: Navigation & Timer */}
+      <header className="relative z-50 p-6 flex justify-between items-center max-w-7xl mx-auto w-full">
+        <Link href="/dashboard" className="flex items-center gap-2 text-white/40 hover:text-white transition-colors group">
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-xs font-black uppercase tracking-[0.2em]">Exit</span>
         </Link>
-        <ThemeToggle />
-      </div>
+        
+        <div className="flex flex-col items-center">
+            <div className={`text-4xl font-black italic tracking-tighter tabular-nums ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-white/90'}`}>
+                {Math.ceil(timeLeft)}s
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Remaining</span>
+        </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto w-full relative z-10">
+        <div className="w-20" /> {/* Spacer */}
+      </header>
+
+      {/* Main Experience Area */}
+      <main className="flex-1 relative z-10 flex flex-col items-center justify-center">
         <AnimatePresence mode="wait">
-          {!hasStarted && !isFinished && (
-            <motion.div
-              key="instructions"
-              initial={{ opacity: 0, scale: 0.95 }}
+
+          {stage === "countdown" && (
+            <motion.div 
+              key="countdown"
+              initial={{ opacity: 0, scale: 2 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="glass-card p-10 md:p-14 rounded-[2.5rem] border-primary/20 text-center flex flex-col items-center w-full shadow-2xl shadow-primary/5"
+              exit={{ opacity: 0, scale: 0.5 }}
+              className="absolute inset-0 flex items-center justify-center bg-black z-[100]"
             >
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-8">
-                <FastForward className="w-10 h-10 text-primary" />
-              </div>
-              <h1 className="text-4xl md:text-5xl font-black mb-8 italic tracking-tight">Speed Reading Challenge</h1>
-              
-              {/* Speed Selector */}
-              <div className="w-full max-w-md mb-12">
-                <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 text-center">Select Challenge Speed</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {SPEED_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.label}
-                      onClick={() => setSpeed(opt.value)}
-                      className={`px-4 py-3 rounded-xl border font-bold transition-all ${
-                        speed === opt.value 
-                        ? `${opt.color.replace('/10', '/30')} border-opacity-100 scale-105 ring-2 ring-primary/20` 
-                        : "bg-muted/50 border-border opacity-60 hover:opacity-100"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <button
-                onClick={handleStart}
-                className="w-full sm:w-auto px-12 py-6 rounded-[2rem] blue-gradient text-white font-black text-2xl flex items-center justify-center gap-4 hover:scale-105 transition-transform blue-glow"
-              >
-                <Play className="w-8 h-8 fill-current" />
-                START NOW
-              </button>
+              <span className="text-[20rem] font-black italic leading-none">{countdown}</span>
             </motion.div>
           )}
 
-          {hasStarted && !isFinished && (
-            <motion.div
-              key="teleprompter"
+          {stage === "active" && (
+            <motion.div 
+              key="active"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="w-full flex flex-col items-center h-[70vh] relative"
+              className="absolute inset-0 flex flex-col items-center"
             >
-              {/* Teleprompter Frame */}
-              <div 
-                ref={containerRef}
-                className="w-full flex-1 relative overflow-hidden rounded-[2.5rem] bg-card border border-border shadow-2xl"
-              >
-                {/* Gradient Fades */}
-                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-card to-transparent z-20 pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-card to-transparent z-10 pointer-events-none"></div>
+              {/* Focus Guides */}
+              <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-black via-black/80 to-transparent z-20 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-black via-black/80 to-transparent z-20 pointer-events-none" />
 
-                {/* Scrolling Text Container */}
-                <div className="absolute inset-0 flex justify-center">
-                  <motion.div
-                    ref={contentRef}
-                    key={`${paragraph}-${speed}`}
-                    initial={{ y: 1000 }}
-                    animate={isReady ? { y: -dimensions.contentHeight } : { y: dimensions.containerHeight || 1000 }}
-                    transition={isReady ? {
-                      duration: (dimensions.containerHeight + dimensions.contentHeight) * speed * 3.5,
-                      ease: "linear",
-                    } : { duration: 0 }}
-                    onAnimationComplete={() => {
-                      if (isReady) setIsFinished(true);
-                    }}
-                    className="w-full max-w-3xl px-8 text-center absolute top-0 opacity-80"
-                  >
-                    <p className="text-4xl md:text-5xl lg:text-6xl font-black leading-[1.5] text-foreground tracking-tight">
-                      {paragraph}
+              {/* Scrolling Window Container */}
+              <div 
+                className="w-full flex-1 overflow-hidden px-10 relative"
+                onClick={() => isPaused && setIsPaused(false)}
+              >
+                <div 
+                  ref={scrollRef}
+                  className="w-full flex flex-col items-center will-change-transform pt-[45vh]"
+                  style={{ willChange: 'transform' }}
+                >
+                  <div className="w-full max-w-4xl text-center pb-[100vh]">
+                    <p className="text-[3rem] md:text-[5rem] font-black italic leading-[1.1] text-white uppercase tracking-tighter opacity-90">
+                      {PRACTICE_TEXT}
                     </p>
-                  </motion.div>
+                  </div>
                 </div>
               </div>
 
-              {/* Controls */}
-              <button
-                onClick={() => setIsFinished(true)}
-                className="mt-8 px-8 py-4 rounded-2xl bg-red-500/10 text-red-500 font-bold border border-red-500/20 hover:bg-red-500 hover:text-white transition-all flex items-center gap-2"
-              >
-                <Square className="w-5 h-5 fill-current" />
-                END CHALLENGE
-              </button>
+              {/* Start Overlay Removed */}
             </motion.div>
           )}
 
-          {isFinished && (
-            <motion.div
+          {stage === "finished" && (
+            <motion.div 
               key="finished"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-card p-10 md:p-14 rounded-[2.5rem] text-center flex flex-col items-center shadow-2xl"
+              className="max-w-xl w-full text-center space-y-12 px-6"
             >
-              <h2 className="text-4xl font-black mb-4 italic">Challenge Completed! 🎉</h2>
-              <p className="text-xl text-muted-foreground mb-10">How did you do? Did you manage to keep up with the scrolling text without stumbling?</p>
+              <div className="space-y-6">
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto ${result === 'win' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                  {result === 'win' ? <CheckCircle2 className="w-12 h-12" /> : <AlertCircle className="w-12 h-12" />}
+                </div>
+                <div className="space-y-2">
+                    <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none">
+                        {result === 'win' ? "STRONG DELIVERY" : "FELL BEHIND"}
+                    </h2>
+                    <p className="text-xl text-white/40 font-medium">
+                        {result === 'win' ? "You kept the pace perfectly. Great control." : "Your pacing needs work. Try again."}
+                    </p>
+                </div>
+              </div>
 
-              <div className="flex gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={startChallenge}
+                  className="p-6 rounded-3xl bg-white text-black font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform"
+                >
+                  Retry Training
+                </button>
                 <Link
                   href="/dashboard"
-                  className="px-8 py-4 rounded-xl bg-muted font-bold text-foreground hover:bg-muted/80 transition-colors"
+                  className="p-6 rounded-3xl bg-white/5 border border-white/10 text-white font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center justify-center"
                 >
-                  Return to Dashboard
+                  Exit Arena
                 </Link>
-                <button
-                  onClick={handleReset}
-                  className="px-8 py-4 rounded-xl bg-primary text-white font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                  Try Another
-                </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </main>
 
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full -mr-64 -mt-64 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full -ml-64 -mb-64 pointer-events-none"></div>
-    </main>
+      {/* Bottom Controls */}
+      {stage === "active" && (
+        <footer className="relative z-50 p-12 flex justify-center items-center gap-8 bg-gradient-to-t from-black to-transparent">
+          <button
+            onClick={restart}
+            className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all text-white/60 hover:text-white"
+          >
+            <RotateCcw className="w-6 h-6" />
+          </button>
+          
+          <button
+            onClick={togglePause}
+            className="w-24 h-24 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl shadow-white/10"
+          >
+            {isPaused ? <Play className="w-10 h-10 fill-current ml-1" /> : <Pause className="w-10 h-10 fill-current" />}
+          </button>
+
+          <div className="w-16 h-16 flex items-center justify-center">
+            <span className="text-xs font-black uppercase tracking-widest text-white/20 italic">1.0x</span>
+          </div>
+        </footer>
+      )}
+    </div>
   );
 }
