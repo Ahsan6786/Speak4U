@@ -62,26 +62,28 @@ export default function DashboardClient() {
   };
 
   const startPractice = async (rapid = false) => {
+    // 1. Switch View IMMEDIATELY to eliminate lag
+    setView("practice");
+    setIsRapidFire(rapid);
+    if (rapid) {
+      setRapidFireStep(1);
+      setRapidFireAnswers([]);
+    } else {
+      setRapidFireStep(0);
+    }
+
+    // 2. Handle permissions and data in background
     const granted = await requestPermission();
     if (granted) {
+      await fetchNewQuestion();
       if (rapid) {
-        setIsRapidFire(true);
-        setRapidFireStep(1);
-        setRapidFireAnswers([]);
-        setView("practice");
-        await fetchNewQuestion();
-        // AUTO START RECORDING FOR RAPID FIRE
         setTimeout(() => {
           handleStart();
         }, 800); 
-      } else {
-        setIsRapidFire(false);
-        setRapidFireStep(0);
-        setView("practice");
-        await fetchNewQuestion();
       }
     } else {
       alert("Microphone access is required to practice. Please enable it in your browser settings.");
+      setView("history");
     }
   };
 
@@ -274,9 +276,18 @@ export default function DashboardClient() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-4xl flex items-center justify-between"
         >
-          <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500">Rapid Fire Drill</span>
-            <h3 className="text-xl font-bold tracking-tighter">Question {rapidFireStep} of 6</h3>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setView("history")}
+              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all shadow-sm"
+              title="Go Back"
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </button>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500">Rapid Fire Drill</span>
+              <h3 className="text-xl font-bold tracking-tighter">Question {rapidFireStep} of 6</h3>
+            </div>
           </div>
           <div className="flex gap-1">
             {[1,2,3,4,5,6].map(s => (
