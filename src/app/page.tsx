@@ -80,20 +80,36 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#000000]"
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#000000] will-change-opacity"
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="flex items-center justify-center"
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="flex flex-col items-center justify-center gap-8"
             >
-              <img 
-                src="/splash.png" 
-                alt="Splash Logo" 
-                className="w-64 h-64 md:w-96 md:h-96 object-contain drop-shadow-[0_0_60px_rgba(255,195,0,0.15)]" 
-              />
+              <div className="relative w-48 h-48 md:w-64 md:h-64">
+                <img 
+                  src="/splash.png" 
+                  alt="REVIAL" 
+                  className="w-full h-full object-contain drop-shadow-[0_0_40px_rgba(255,195,0,0.15)] relative z-10" 
+                  onError={(e) => {
+                    // Fallback to logo if splash fails
+                    (e.target as HTMLImageElement).src = "/logo.jpeg";
+                  }}
+                />
+                <div className="absolute inset-0 bg-yellow-500/10 blur-[60px] animate-pulse" />
+              </div>
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="flex flex-col items-center gap-2"
+              >
+                <h2 className="text-2xl font-black tracking-[0.4em] text-white uppercase italic">REVIAL</h2>
+                <div className="h-1 w-12 bg-yellow-500 rounded-full" />
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
@@ -159,9 +175,9 @@ export default function Home() {
 
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
             className="relative z-10 max-w-4xl"
           >
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tight leading-[0.9] text-white mb-4">

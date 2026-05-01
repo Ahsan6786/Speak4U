@@ -65,14 +65,32 @@
     color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
+    /* Force GPU acceleration on mobile */
+    transform: translate3d(0,0,0);
+    backface-visibility: hidden;
+    perspective: 1000;
   }
 }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px); /* Reduced from 12px for better performance */
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  /* Optimize for mobile */
+  transform: translateZ(0);
+}
+
+/* Reduced blur for mobile to eliminate lag */
+@media (max-width: 768px) {
+  .glass-card {
+    backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .glass-dock {
+    backdrop-blur: 10px;
+  }
 }
 
 .light .glass-card {
