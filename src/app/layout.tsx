@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -6,10 +5,27 @@ const inter = Inter({ subsets: ["latin"] });
 
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AuthProvider } from "@/components/auth-provider";
+import { InstallPrompt } from "@/components/install-prompt";
+
+import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
   title: "SpeakMirror – Daily AI Speaking Coach",
   description: "Stop hesitating. Start speaking with clarity, structure, and confidence.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SpeakMirror",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0e87cc",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -23,6 +39,7 @@ export default function RootLayout({
         <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
             {children}
+            <InstallPrompt />
           </AuthProvider>
         </NextThemesProvider>
       </body>
