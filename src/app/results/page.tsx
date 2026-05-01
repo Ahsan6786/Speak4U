@@ -22,7 +22,8 @@ import {
   Download,
   Share2,
   BookOpen,
-  LayoutGrid
+  LayoutGrid,
+  Mic
 } from "lucide-react";
 import { 
   Radar, 
