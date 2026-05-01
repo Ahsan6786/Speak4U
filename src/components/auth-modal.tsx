@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Mail, Lock, LogIn, ArrowRight, Sparkles } from "lucide-react";
 import { useAuth } from "./auth-provider";
@@ -59,7 +60,7 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             onClick={onClose}
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
           />
-          
+
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -113,7 +114,7 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full blue-gradient py-4 rounded-2xl text-white font-black flex items-center justify-center gap-2 hover:opacity-90 transition-all blue-glow disabled:opacity-50"
+                className="w-full blue-gradient py-4 rounded-full text-white font-black flex items-center justify-center gap-2 hover:opacity-90 transition-all blue-glow disabled:opacity-50"
               >
                 {loading ? "PROCESSING..." : isLogin ? "SIGN IN" : "CREATE ACCOUNT"}
                 <ArrowRight className="w-5 h-5" />
@@ -132,10 +133,10 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             <button
               onClick={handleGoogle}
               disabled={loading}
-              className="w-full py-4 rounded-2xl border border-border hover:bg-muted font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+              className="w-full py-3.5 rounded-full border-2 border-gray-400/60 bg-white hover:bg-gray-50 text-[#1f1f1f] font-medium text-lg flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-sm"
             >
-              <LogIn className="w-5 h-5" />
-              GOOGLE
+              <Image src="/google.png" alt="Google" width={30} height={30} className="mr-2" />
+              {isLogin ? "Sign in with Google" : "Sign up with Google"}
             </button>
 
             <p className="mt-8 text-center text-sm text-muted-foreground">

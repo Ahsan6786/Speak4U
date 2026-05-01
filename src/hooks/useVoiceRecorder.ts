@@ -18,11 +18,13 @@ export function useVoiceRecorder() {
     // Setup Web Speech API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
 
-      recognitionRef.current.onresult = (event: any) => {
+      recognition.onresult = (event: any) => {
         let currentTranscript = "";
         for (let i = 0; i < event.results.length; i++) {
           currentTranscript += event.results[i][0].transcript;
@@ -30,7 +32,24 @@ export function useVoiceRecorder() {
         setTranscript(currentTranscript);
       };
 
-      recognitionRef.current.start();
+      recognition.onerror = (event: any) => {
+        if (event.error === 'aborted' || event.error === 'no-speech') return;
+        console.error("Speech Recognition Error:", event.error);
+        // Don't stop recording on error, try to keep going
+      };
+
+      recognition.onend = () => {
+        // If the user hasn't clicked stop, restart the recognition
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+          try {
+            recognition.start();
+          } catch (e) {
+            console.error("Failed to restart recognition:", e);
+          }
+        }
+      };
+
+      recognition.start();
     }
 
     // Setup MediaRecorder for audio playback

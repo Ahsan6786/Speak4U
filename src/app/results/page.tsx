@@ -353,6 +353,29 @@ export default function Results() {
           <ScoreCircle label="Tone" score={data?.tone_score || 0} color="text-yellow-500" delay={0.4} />
         </div>
 
+        {/* What You Said Section (Requested) */}
+        <motion.section 
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.35 }}
+          className="mb-16"
+        >
+          <div className="glass-card rounded-[3rem] p-10 md:p-14 border-border/50 bg-muted/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+              <Mic className="w-48 h-48" />
+            </div>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary">Original Transcript</h3>
+            </div>
+            <p className="text-2xl md:text-4xl text-foreground font-medium leading-[1.4] italic tracking-tight relative z-10">
+              "{typeof window !== 'undefined' ? sessionStorage.getItem("last_transcript") : ""}"
+            </p>
+          </div>
+        </motion.section>
+
         {/* Main Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 space-y-10">
@@ -416,23 +439,26 @@ export default function Results() {
             <InfoCard 
               title="What to fix" 
               items={data?.mistakes?.slice(0, 3) || []} 
-              icon={<XCircle className="w-6 h-6 text-red-500" />} 
+              icon={<XCircle className="w-6 h-6 text-white" />} 
               delay={0.6}
-              className="border-red-500/10 hover:border-red-500/30 bg-red-500/[0.02]"
+              className="bg-purple-600 text-white border-purple-500"
+              textClass="text-white/90"
             />
             <InfoCard 
               title="How to improve" 
               items={data?.improvement_tips?.slice(0, 3) || []} 
-              icon={<Lightbulb className="w-6 h-6 text-yellow-500" />} 
+              icon={<Lightbulb className="w-6 h-6 text-white" />} 
               delay={0.7}
-              className="border-yellow-500/10 hover:border-yellow-500/30 bg-yellow-500/[0.02]"
+              className="bg-cyan-600 text-white border-cyan-500"
+              textClass="text-white/90"
             />
             <InfoCard 
               title="Words to Learn" 
               items={data?.vocab_words?.slice(0, 3).map(v => `${v.word}: ${v.meaning}`) || []} 
-              icon={<BookOpen className="w-6 h-6 text-blue-500" />} 
+              icon={<BookOpen className="w-6 h-6 text-white" />} 
               delay={0.8}
-              className="border-blue-500/10 hover:border-blue-500/30 bg-blue-500/[0.02]"
+              className="bg-emerald-600 text-white border-emerald-500"
+              textClass="text-white/90"
             />
             
             <motion.div 
@@ -497,13 +523,13 @@ function StatItem({ label, value, icon }: { label: string, value: string | numbe
   );
 }
 
-function InfoCard({ title, items, icon, delay, className }: { title: string, items: string[], icon: React.ReactNode, delay: number, className?: string }) {
+function InfoCard({ title, items, icon, delay, className, textClass }: { title: string, items: string[], icon: React.ReactNode, delay: number, className?: string, textClass?: string }) {
   return (
     <motion.div 
       initial={{ x: 20, opacity: 0 }} 
       animate={{ x: 0, opacity: 1 }} 
       transition={{ delay }} 
-      className={cn("glass-card p-6 rounded-[2rem] border-b-4", className)}
+      className={cn("p-6 rounded-[2rem] border-b-4 backdrop-blur-xl shadow-xl", className)}
     >
       <div className="flex items-center gap-3 mb-4">
         {icon}
@@ -511,8 +537,8 @@ function InfoCard({ title, items, icon, delay, className }: { title: string, ite
       </div>
       <ul className="space-y-2">
         {items.map((item, i) => (
-          <li key={i} className="text-muted-foreground text-xs font-medium flex gap-2 leading-tight">
-            <span className="mt-1.5 w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0"></span>
+          <li key={i} className={cn("text-xs font-medium flex gap-2 leading-tight", textClass || "text-muted-foreground")}>
+            <span className="mt-1.5 w-1 h-1 rounded-full bg-current opacity-40 shrink-0"></span>
             {item}
           </li>
         ))}

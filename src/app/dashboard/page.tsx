@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, StopCircle, RotateCcw, ArrowRight, Timer, Brain, Flame, Sparkles, ChevronRight, History, Calendar, Play, MessageSquare, Trash2, LayoutGrid } from "lucide-react";
+import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -25,18 +25,24 @@ const DAILY_PROMPTS = [
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const { isRecording, transcript, startRecording, stopRecording, audioBlob, requestPermission } = useVoiceRecorder();
   const [timeLeft, setTimeLeft] = useState(60);
   const [prompt, setPrompt] = useState("");
   const [streak, setStreak] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [view, setView] = useState<"history" | "practice">("history");
   const [sessions, setSessions] = useState<any[]>([]);
+  const [assistMode, setAssistMode] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isFetchingAssist, setIsFetchingAssist] = useState(false);
   const searchParams = useSearchParams();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   const fetchNewQuestion = async () => {
     try {
@@ -44,7 +50,7 @@ export default function Dashboard() {
       const response = await fetch("/api/generate-question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ history }),
+        body: JSON.stringify({ history, streak }),
       });
       const data = await response.json();
       setPrompt(data.question);
@@ -91,10 +97,14 @@ export default function Dashboard() {
         const data = doc.data();
         setStreak(data.streak || 0);
         setUserName(data.name || "");
-        setShowOnboarding(!data.onboarded);
+        if (!data.onboarded) {
+          router.push("/onboarding");
+        } else {
+          setDataLoading(false);
+        }
       } else {
         setDoc(userDocRef, { streak: 0, onboarded: false }, { merge: true });
-        setShowOnboarding(true);
+        router.push("/onboarding");
       }
     });
 
@@ -110,6 +120,7 @@ export default function Dashboard() {
       unsubHistory();
     };
   }, [user, authLoading, router]);
+
 
   useEffect(() => {
     if (isRecording && timeLeft > 0) {
@@ -127,14 +138,47 @@ export default function Dashboard() {
     };
   }, [isRecording, timeLeft, stopRecording]);
 
-  const deleteSession = async (e: React.MouseEvent, sessionId: string) => {
-    e.stopPropagation();
-    if (!user || !window.confirm("Delete this report forever?")) return;
+  useEffect(() => {
+    if (!isRecording || !assistMode || !transcript || transcript.length < 10) return;
+
+    const timeoutId = setTimeout(async () => {
+      setIsFetchingAssist(true);
+      try {
+        const response = await fetch("/api/assist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transcript, prompt }),
+        });
+        const data = await response.json();
+        if (data.suggestions) {
+          setSuggestions(data.suggestions);
+        }
+      } catch (err) {
+        console.error("Assist failed:", err);
+      } finally {
+        setIsFetchingAssist(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(timeoutId);
+  }, [transcript, isRecording, assistMode, prompt]);
+
+
+
+  const confirmDelete = async () => {
+    if (!user || !sessionToDelete) return;
     try {
-      await deleteDoc(doc(db, "users", user.uid, "sessions", sessionId));
+      await deleteDoc(doc(db, "users", user.uid, "sessions", sessionToDelete));
+      setSessionToDelete(null);
     } catch (err) {
       console.error("Delete failed:", err);
     }
+  };
+
+  const deleteSession = (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setSessionToDelete(sessionId);
   };
 
   const handleStart = () => {
@@ -166,17 +210,87 @@ export default function Dashboard() {
     }
   };
 
+  // Loading Screen
+  if (authLoading || dataLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-muted-foreground font-bold animate-pulse uppercase tracking-widest text-xs">Preparing Dashboard</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground p-6 md:p-12 overflow-hidden selection:bg-primary/30 transition-colors duration-300 relative">
       <AnimatePresence>
-        {showOnboarding && (
-          <Onboarding 
-            user={user} 
-            onComplete={(name) => {
-              setUserName(name);
-              setShowOnboarding(false);
-            }} 
-          />
+        {sessionToDelete && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card border border-border p-8 rounded-[2rem] shadow-2xl max-w-md w-full text-center"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-6">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-black mb-2">Delete Report?</h3>
+              <p className="text-muted-foreground mb-8">This action cannot be undone. Are you sure you want to permanently delete this practice report?</p>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setSessionToDelete(null)}
+                  className="flex-1 py-4 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 py-4 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showSignOutConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card border border-border p-8 rounded-[2rem] shadow-2xl max-w-md w-full text-center"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mx-auto mb-6">
+                <LogOut className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-black mb-2">Sign Out?</h3>
+              <p className="text-muted-foreground mb-8">Are you sure you want to sign out of your account?</p>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setShowSignOutConfirm(false)}
+                  className="flex-1 py-4 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    logout();
+                    router.push("/");
+                  }}
+                  className="flex-1 py-4 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
       {/* Background Decor */}
@@ -189,16 +303,23 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <button 
               onClick={() => view === "practice" ? setView("history") : router.push("/")}
-              className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all hover:scale-105"
+              className="w-12 h-12 rounded-2xl bg-card border-2 border-border flex items-center justify-center text-foreground hover:bg-primary hover:text-white hover:border-primary transition-all hover:scale-105 shadow-sm"
               title="Menu"
             >
               <LayoutGrid className="w-5 h-5" />
             </button>
             <ThemeToggle />
+            <button 
+              onClick={() => setShowSignOutConfirm(true)}
+              className="w-12 h-12 rounded-2xl bg-card border-2 border-border flex items-center justify-center text-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all hover:scale-105 shadow-sm"
+              title="Sign Out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="h-12 px-4 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center gap-2 text-orange-500 font-black">
+            <div className="h-12 px-6 rounded-2xl bg-orange-500/10 border-2 border-orange-500/30 flex items-center gap-2 text-orange-600 dark:text-orange-400 font-black shadow-sm">
               <Flame className="w-5 h-5 fill-current" />
               <span>{streak}</span>
             </div>
@@ -215,18 +336,18 @@ export default function Dashboard() {
               className="space-y-12"
             >
               {/* Menu Hero */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-8 glass-card rounded-[2.5rem] p-10 md:p-14 border-primary/20 bg-primary/5">
-                <div>
-                  <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 italic">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 rounded-[2.5rem] p-10 md:p-14 bg-emerald-600 text-white shadow-2xl shadow-emerald-600/20 mb-12 relative overflow-hidden group">
+                <div className="relative z-10">
+                  <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-3 italic">
                     Hello, {userName || "Speaker"}
                   </h1>
-                  <p className="text-xl text-muted-foreground font-medium max-w-md leading-relaxed">
+                  <p className="text-xl text-emerald-50 font-medium max-w-md leading-relaxed">
                     Look at your progress below. Ready for more?
                   </p>
                 </div>
                 <button 
                   onClick={startPractice}
-                  className="group flex items-center gap-4 bg-primary text-white px-10 py-6 rounded-[2rem] font-black text-xl hover:scale-105 transition-all shadow-2xl shadow-primary/20 whitespace-nowrap"
+                  className="relative z-10 w-full md:w-auto group flex items-center justify-center gap-4 bg-white text-emerald-600 px-10 py-6 rounded-[2rem] font-black text-xl hover:bg-emerald-50 transition-all shadow-xl hover:scale-105 active:scale-95"
                 >
                   <Play className="w-6 h-6 fill-current" />
                   PRACTICE MORE
@@ -234,72 +355,46 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* Previous Reports Section */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-10 h-10 rounded-xl bg-muted border border-border flex items-center justify-center">
-                    <History className="w-5 h-5" />
+              {/* Independent Action Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-16">
+                <Link 
+                  href="/speak-with-me"
+                  className="group relative flex items-center justify-between p-8 rounded-[2.5rem] bg-sky-500 text-white hover:bg-sky-600 transition-all shadow-xl shadow-sky-500/20"
+                >
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-3xl bg-white/20 text-white flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform">
+                      <FastForward className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black tracking-tight italic">Speak With Me</h3>
+                      <p className="text-sm text-sky-100 font-medium opacity-90">Teleprompter Challenge</p>
+                    </div>
                   </div>
-                  <h2 className="text-2xl font-black tracking-tight">Your Past Reports</h2>
-                </div>
+                  <div className="w-12 h-12 rounded-2xl bg-white text-sky-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
+                    <ChevronRight className="w-6 h-6" />
+                  </div>
+                </Link>
 
-                {sessions.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-4">
-                    {sessions.map((session, i) => (
-                      <motion.div 
-                        key={session.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="glass-card rounded-[2rem] p-4 sm:p-6 border-border/50 hover:border-primary/30 transition-all group"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex items-center gap-4 sm:gap-6 min-w-0">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-muted flex flex-col items-center justify-center border border-border text-muted-foreground shrink-0">
-                               <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mb-0.5 sm:mb-1" />
-                               <span className="text-[8px] sm:text-[10px] font-black">{session.timestamp?.toDate ? new Date(session.timestamp.toDate()).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'Today'}</span>
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-primary mb-0.5 sm:mb-1">Topic</p>
-                              <h4 className="font-bold text-sm sm:text-lg leading-tight line-clamp-1 italic text-foreground/90 group-hover:text-foreground transition-colors">"{session.prompt}"</h4>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-8 pt-3 sm:pt-0 border-t sm:border-0 border-border/50">
-                            <div className="text-left sm:text-right">
-                              <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">Score</p>
-                              <span className="font-black text-lg sm:text-2xl tracking-tighter">{session.feedback?.confidence_score}%</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button 
-                                onClick={(e) => deleteSession(e, session.id)}
-                                className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
-                                title="Delete Report"
-                              >
-                                <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  sessionStorage.setItem("last_transcript", session.transcript);
-                                  sessionStorage.setItem("last_prompt", session.prompt);
-                                  router.push("/results");
-                                }}
-                                className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-muted border border-border hover:bg-primary hover:text-white transition-all group-hover:scale-105"
-                              >
-                                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
+                <Link 
+                  href="/reports"
+                  className="group relative flex items-center justify-between p-8 rounded-[2.5rem] bg-card border-2 border-border hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all shadow-sm"
+                >
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                      <History className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black tracking-tight italic">Your Reports</h3>
+                      <p className="text-sm text-muted-foreground font-medium">Analytics & Progress</p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-20 glass-card rounded-[2.5rem] border-dashed border-2 opacity-50">
-                    <p className="text-muted-foreground font-medium">No reports yet. Click "Practice More" to start!</p>
+                  <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                    <ChevronRight className="w-6 h-6" />
                   </div>
-                )}
+                </Link>
               </div>
+
+              {/* Removed History Section as requested */}
             </motion.div>
           ) : (
             <motion.div
@@ -310,7 +405,7 @@ export default function Dashboard() {
             >
               {/* Prompt Card / Live Transcript Area */}
               <AnimatePresence mode="wait">
-                {!isRecording ? (
+                {!isRecording && !isAnalyzing && !transcript ? (
                   <motion.div 
                     key="prompt-card"
                     initial={{ scale: 0.95, opacity: 0 }}
@@ -328,14 +423,25 @@ export default function Dashboard() {
                     <h2 className="text-3xl md:text-5xl font-bold mb-10 leading-[1.1] max-w-3xl tracking-tight">
                       "{prompt}"
                     </h2>
-                    <div className="flex flex-wrap gap-8 text-muted-foreground">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-muted border border-border"><Timer className="w-4 h-4 text-foreground" /></div>
-                        <span className="font-bold text-sm uppercase tracking-widest">60 SECONDS</span>
+                    <div className="flex flex-wrap gap-8 text-muted-foreground items-center justify-between w-full mt-10 border-t border-border/50 pt-8">
+                      <div className="flex gap-8">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-muted border border-border"><Timer className="w-4 h-4 text-foreground" /></div>
+                          <span className="font-bold text-sm uppercase tracking-widest">60 SECONDS</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-muted border border-border"><Mic className="w-4 h-4 text-foreground" /></div>
+                          <span className="font-bold text-sm uppercase tracking-widest">ANALYSIS</span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-muted border border-border"><Mic className="w-4 h-4 text-foreground" /></div>
-                        <span className="font-bold text-sm uppercase tracking-widest">ANALYSIS</span>
+                        <button 
+                          onClick={() => setAssistMode(!assistMode)}
+                          className={cn("flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-sm uppercase tracking-widest border", assistMode ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-muted text-muted-foreground border-border hover:bg-muted/80")}
+                        >
+                          <Wand2 className="w-4 h-4" />
+                          Assist Mode {assistMode ? "ON" : "OFF"}
+                        </button>
                       </div>
                     </div>
                   </motion.div>
@@ -361,9 +467,48 @@ export default function Dashboard() {
                         className="absolute inset-0 border-4 border-primary rounded-full"
                       ></motion.div>
                     </div>
-                    <p className="text-xl md:text-3xl font-bold text-foreground leading-tight max-w-4xl italic">
+                    <p className="text-xl md:text-3xl font-bold text-foreground leading-tight max-w-4xl italic mb-12">
                       {transcript || "Speak now. I am listening..."}
                     </p>
+
+                    <AnimatePresence>
+                      {assistMode && isRecording && (suggestions.length > 0 || isFetchingAssist) && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="flex flex-col items-center mt-8 w-full max-w-3xl"
+                        >
+                          <div className="flex items-center gap-3 mb-6">
+                            <div className="relative">
+                              <Wand2 className={cn("w-5 h-5 text-emerald-500", isFetchingAssist ? "animate-spin" : "animate-pulse")} />
+                              {isFetchingAssist && (
+                                <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-emerald-600 font-black text-sm uppercase tracking-[0.2em]">
+                              {isFetchingAssist ? "Thinking..." : "Live Suggestions"}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap justify-center gap-4">
+                            {suggestions.map((sug, i) => (
+                              <motion.div 
+                                key={i}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.05 }}
+                                className="px-6 py-4 rounded-[1.5rem] bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-lg md:text-xl shadow-xl shadow-emerald-500/5 backdrop-blur-xl"
+                              >
+                                {sug}
+                              </motion.div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -404,14 +549,10 @@ export default function Dashboard() {
                         </button>
                       ) : (
                         <div className="flex flex-col items-center gap-10 w-full max-w-2xl">
-                           <div className="w-full glass-card rounded-3xl p-8 border-border">
-                            <h3 className="text-xs font-black text-muted-foreground mb-4 uppercase tracking-[0.2em]">What you said</h3>
-                            <p className="text-xl text-foreground leading-relaxed font-medium">{transcript}</p>
-                          </div>
-                          <div className="flex gap-6">
+                          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full sm:w-auto">
                             <button 
                               onClick={handleStart}
-                              className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-muted border border-border hover:bg-muted/80 transition-colors font-bold"
+                              className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-8 py-5 rounded-[1.8rem] bg-card border-2 border-border text-foreground hover:bg-muted hover:border-primary/30 transition-all font-black text-lg shadow-sm active:scale-95"
                             >
                               <RotateCcw className="w-5 h-5" />
                               RETAKE
@@ -419,10 +560,10 @@ export default function Dashboard() {
                             <button 
                               onClick={handleFinish}
                               disabled={isAnalyzing}
-                              className="flex items-center gap-3 px-10 py-4 rounded-2xl blue-gradient text-white font-bold blue-glow hover:opacity-90 disabled:opacity-50 transition-all"
+                              className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-10 py-5 rounded-[1.8rem] blue-gradient text-white font-black text-lg blue-glow hover:scale-[1.03] active:scale-95 disabled:opacity-50 transition-all shadow-xl shadow-blue-500/20"
                             >
-                              {isAnalyzing ? "SAVING..." : "SEE RESULT"}
-                              <ChevronRight className="w-5 h-5" />
+                              {isAnalyzing ? "ANALYZING..." : "SEE RESULT"}
+                              <ChevronRight className="w-6 h-6" />
                             </button>
                           </div>
                         </div>
