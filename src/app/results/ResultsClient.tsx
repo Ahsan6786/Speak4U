@@ -454,7 +454,7 @@ export default function ResultsClient() {
                             <div className="space-y-1.5 pt-1">
                               <span className="text-[10px] font-black uppercase tracking-widest text-yellow-600 dark:text-yellow-400">Expert Coaching Insight</span>
                               <p className="text-sm md:text-base text-foreground/80 font-semibold leading-relaxed">
-                                {data.per_answer_summaries[i]}
+                                {data.per_answer_summaries?.[i]}
                               </p>
                             </div>
                           </div>
