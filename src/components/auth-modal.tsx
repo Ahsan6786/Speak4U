@@ -51,7 +51,7 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -65,7 +65,7 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="relative w-full max-w-md bg-[#0A0A0A] border border-zinc-800 rounded-[3rem] p-8 md:p-12 shadow-[0_0_100px_rgba(0,0,0,1)] z-10 my-auto"
+            className="relative w-full max-w-md bg-[#0A0A0A] border border-zinc-800 rounded-[2.5rem] p-6 md:p-10 shadow-[0_0_100px_rgba(0,0,0,1)] z-10"
           >
             <div className="absolute top-0 right-0 p-6">
               <button onClick={onClose} className="p-2 rounded-full hover:bg-zinc-800 transition-colors">
@@ -73,14 +73,14 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               </button>
             </div>
 
-            <div className="flex flex-col items-center text-center mb-8">
-              <img src="/splash.png" alt="REVIAL Logo" className="w-32 h-32 object-contain mb-2" />
-              <h2 className="text-3xl font-black tracking-tight text-white">
+            <div className="flex flex-col items-center text-center mb-6">
+              <img src="/splash.png" alt="REVIAL Logo" className="w-20 h-20 object-contain mb-1" />
+              <h2 className="text-2xl font-black tracking-tight text-white">
                 {isLogin ? "Welcome Back." : "Create Account."}
               </h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 mb-8">
+            <form onSubmit={handleSubmit} className="space-y-4 mb-6">
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
                 <input
@@ -88,7 +88,7 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   placeholder="Email Address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#111111] border border-zinc-800 text-white placeholder:text-zinc-500 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
+                  className="w-full bg-[#111111] border border-zinc-800 text-white placeholder:text-zinc-500 rounded-2xl py-3.5 pl-12 pr-4 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
                   required
                 />
               </div>
@@ -99,7 +99,7 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#111111] border border-zinc-800 text-white placeholder:text-zinc-500 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
+                  className="w-full bg-[#111111] border border-zinc-800 text-white placeholder:text-zinc-500 rounded-2xl py-3.5 pl-12 pr-4 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
                   required
                 />
               </div>
@@ -109,7 +109,7 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-white hover:bg-zinc-100 py-4 rounded-full text-black font-black flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg"
+                className="w-full bg-white hover:bg-zinc-100 py-3.5 rounded-full text-black font-black flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg"
               >
                 {loading ? "PROCESSING..." : isLogin ? "SIGN IN" : "CONTINUE"}
                 <ArrowRight className="w-5 h-5" />
@@ -128,9 +128,9 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             <button
               onClick={handleGoogle}
               disabled={loading}
-              className="w-full py-4 rounded-full border border-zinc-700 bg-white hover:bg-zinc-100 text-black font-black text-[15px] flex items-center justify-center gap-4 transition-all disabled:opacity-50"
+              className="w-full py-3 rounded-full border border-zinc-700 bg-white hover:bg-zinc-100 text-black font-black text-[15px] flex items-center justify-center gap-4 transition-all disabled:opacity-50"
             >
-              <Image src="/google.png" alt="Google" width={32} height={32} className="mr-1" />
+              <Image src="/google.png" alt="Google" width={24} height={24} className="mr-1" />
               {isLogin ? "Sign in with Google" : "Sign up with Google"}
             </button>
 
