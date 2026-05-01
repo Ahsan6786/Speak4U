@@ -65,31 +65,22 @@
     color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
-    /* Force GPU acceleration on mobile */
-    transform: translate3d(0,0,0);
-    backface-visibility: hidden;
-    perspective: 1000;
+    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: opacity, transform;
   }
 }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(8px); /* Reduced from 12px for better performance */
+  backdrop-filter: blur(8px); /* Reduced for mobile performance */
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  /* Optimize for mobile */
-  transform: translateZ(0);
+  will-change: backdrop-filter;
 }
 
-/* Reduced blur for mobile to eliminate lag */
-@media (max-width: 768px) {
+@media (min-width: 768px) {
   .glass-card {
-    backdrop-filter: blur(4px);
-    background: rgba(255, 255, 255, 0.05);
-  }
-  
-  .glass-dock {
-    backdrop-blur: 10px;
+    backdrop-filter: blur(12px);
   }
 }
 
@@ -130,4 +121,12 @@
   .glass-dock {
     @apply bg-background/60 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[2.5rem];
   }
+}
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.page-transition-enter {
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

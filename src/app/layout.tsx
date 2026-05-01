@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-full transition-colors duration-300`}>
+      <body className={`${inter.className} min-h-full transition-colors duration-300 page-transition-enter`}>
         <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
             {children}
