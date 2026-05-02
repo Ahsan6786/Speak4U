@@ -7,6 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AuthProvider } from "@/components/auth-provider";
 import { InstallPrompt } from "@/components/install-prompt";
+import { AppInitializer } from "@/components/app-initializer";
 
 
 import type { Metadata, Viewport } from "next";
@@ -40,8 +41,10 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-full overflow-x-hidden`}>
         <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            {children}
-            <InstallPrompt />
+            <AppInitializer>
+              {children}
+              <InstallPrompt />
+            </AppInitializer>
           </AuthProvider>
         </NextThemesProvider>
       </body>

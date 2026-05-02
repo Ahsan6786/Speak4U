@@ -141,7 +141,7 @@ export default function ReportsClient() {
         <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-10 mb-20">
           <div className="space-y-6 w-full lg:w-auto">
             <div className="flex items-center justify-between lg:justify-start gap-4">
-              <Link href="/dashboard" className="inline-flex items-center gap-3 text-muted-foreground hover:text-foreground transition-all group px-4 py-2 rounded-full bg-muted/50 border border-border hover:bg-muted">
+              <Link href="/dashboard" className="inline-flex items-center gap-3 bg-white text-black hover:bg-zinc-200 transition-all group px-4 py-2 rounded-full shadow-lg">
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Dashboard</span>
               </Link>
@@ -259,7 +259,7 @@ export default function ReportsClient() {
               </div>
               <button 
                 onClick={() => router.push("/dashboard")}
-                className="px-12 py-6 rounded-2xl bg-foreground text-background font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl"
+                className="px-12 py-6 rounded-full bg-foreground text-background font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl"
               >
                 INITIATE PRACTICE
               </button>

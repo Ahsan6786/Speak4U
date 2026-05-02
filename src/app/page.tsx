@@ -15,9 +15,7 @@ import { AuthModal } from "@/components/auth-modal";
 
 const MobileDemo = () => {
   const images = [
-    "/i1.jpg", "/i2.jpg", "/i3.jpg", "/i4.jpg", "/i5.jpg", 
-    "/i6.jpg", "/i7.jpg", "/i8.jpg", "/i9.jpg", "/i11.jpg", 
-    "/i12.jpg", "/i13.jpg"
+    "/i1.jpg", "/i2.jpg", "/i3.jpg", "/i4.jpg"
   ];
   
   const [index, setIndex] = useState(0);
@@ -108,7 +106,7 @@ export default function Home() {
       </nav>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative h-svh md:min-h-screen flex flex-col items-center justify-center px-6 pt-72 md:pt-80 overflow-hidden">
+      <section className="relative h-screen flex flex-col items-center justify-center px-6 pt-32 md:pt-40 overflow-hidden">
         
         <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-10 md:gap-20">
           <div className=" ">
@@ -131,14 +129,14 @@ export default function Home() {
               {!user ? (
                 <button 
                   onClick={() => setIsAuthModalOpen(true)} 
-                  className="px-12 py-6 bg-white text-black font-black rounded-2xl flex items-center gap-3 hover:bg-zinc-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.1)] text-lg uppercase tracking-wider"
+                  className="px-12 py-6 bg-white text-black font-black rounded-full flex items-center gap-3 hover:bg-zinc-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.1)] text-lg uppercase tracking-wider"
                 >
                   GET STARTED <MoveRight size={24} />
                 </button>
               ) : (
                 <Link 
                   href="/dashboard"
-                  className="px-12 py-6 bg-white text-black font-black rounded-2xl flex items-center gap-3 hover:bg-zinc-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.2)] text-lg uppercase tracking-wider"
+                  className="px-12 py-6 bg-white text-black font-black rounded-full flex items-center gap-3 hover:bg-zinc-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.2)] text-lg uppercase tracking-wider"
                 >
                   GO TO DASHBOARD <LayoutGrid size={24} />
                 </Link>
@@ -226,14 +224,15 @@ export default function Home() {
           <div
             className="md:col-span-7 bg-zinc-900/30  border border-white/5 rounded-[4rem] p-12 overflow-hidden relative group  "
           >
-            <div className="relative z-10">
-              <div className="flex gap-4 items-center mb-10">
-                <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center border border-white/10">
-                  <Cpu className="text-yellow-500" size={32} />
+            <div className="flex flex-col items-center -mt-16">
+              {/* Neural Interface Indicator */}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-20 h-20 rounded-3xl bg-yellow-500 flex items-center justify-center shadow-[0_0_50px_rgba(234,179,8,0.5)] hover:scale-110 transition-transform">
+                  <Mic className="text-black" size={32} />
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black tracking-tighter">Bio-Metric Vocal ID</h3>
-                  <p className="text-zinc-500 text-sm">Personalized feedback tailored to your DNA.</p>
+                  <h3 className="text-3xl font-black tracking-tighter italic">Bio-Metric Vocal ID</h3>
+                  <p className="text-zinc-500 text-xs uppercase tracking-widest opacity-60">Neural Engine V2.1</p>
                 </div>
               </div>
               <p className="text-zinc-400 text-xl leading-relaxed mb-8">Our engine identifies your unique pitch baseline and resonance profile, ensuring that coaching feels natural, never robotic.</p>
@@ -321,7 +320,7 @@ export default function Home() {
               
               {/* Brat Animation: High-Contrast Waveform */}
               <div className="absolute inset-0 flex items-center justify-center gap-1 px-10">
-                {[...Array(40)].map((_, i) => (
+                {mounted && [...Array(40)].map((_, i) => (
                   <div 
                     key={i}
                     className="w-1 md:w-2 bg-yellow-500 rounded-full animate-brat-wave"

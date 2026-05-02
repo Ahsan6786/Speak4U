@@ -451,8 +451,6 @@ export default function DashboardClient() {
     return (
       <div className="fixed inset-0 z-[300] bg-[#000000] text-white flex flex-col items-center justify-center p-8 text-center">
         <div
-          
-          
           className="flex flex-col items-center"
         >
           <div className="w-24 h-24 rounded-3xl bg-red-500 flex items-center justify-center mb-10 shadow-[0_0_50px_rgba(239,68,68,0.5)]">
@@ -607,23 +605,32 @@ export default function DashboardClient() {
         <div className="flex items-center justify-between mb-12">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => view === "practice" ? setView("history") : router.push("/")}
-              className="w-12 h-12 rounded-2xl bg-emerald-500 border-2 border-emerald-600 flex items-center justify-center text-white hover:bg-emerald-600 transition-all hover:scale-105 shadow-lg shadow-emerald-500/20"
+              onClick={() => {
+                if (isRecording) stopRecording();
+                view === "practice" ? setView("history") : router.push("/");
+              }}
+              className="w-12 h-12 rounded-full bg-emerald-500 border-2 border-emerald-600 flex items-center justify-center text-white hover:bg-emerald-600 transition-all hover:scale-105 shadow-lg shadow-emerald-500/20"
               title="Menu"
             >
               <LayoutGrid className="w-5 h-5" />
             </button>
             <ThemeToggle />
             <button
-              onClick={() => setShowSettings(true)}
-              className="w-12 h-12 rounded-2xl bg-yellow-500 border-2 border-yellow-600 flex items-center justify-center text-black hover:bg-yellow-600 transition-all hover:scale-105 shadow-lg shadow-yellow-500/20"
+              onClick={() => {
+                if (isRecording) stopRecording();
+                setShowSettings(true);
+              }}
+              className="w-12 h-12 rounded-full bg-yellow-500 border-2 border-yellow-600 flex items-center justify-center text-white hover:bg-yellow-600 transition-all hover:scale-105 shadow-lg shadow-yellow-500/20"
               title="Settings"
             >
               <Settings className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setShowSignOutConfirm(true)}
-              className="w-12 h-12 rounded-2xl bg-blue-500 border-2 border-blue-600 flex items-center justify-center text-white hover:bg-blue-600 transition-all hover:scale-105 shadow-lg shadow-blue-500/20"
+              onClick={() => {
+                if (isRecording) stopRecording();
+                setShowSignOutConfirm(true);
+              }}
+              className="w-12 h-12 rounded-full bg-blue-500 border-2 border-blue-600 flex items-center justify-center text-white hover:bg-blue-600 transition-all hover:scale-105 shadow-lg shadow-blue-500/20"
               title="Sign Out"
             >
               <LogOut className="w-5 h-5" />
@@ -631,7 +638,7 @@ export default function DashboardClient() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="h-12 px-6 rounded-2xl bg-orange-500/10 border-2 border-orange-500/30 flex items-center gap-2 text-orange-600 dark:text-orange-400 font-black shadow-sm">
+            <div className="h-12 px-6 rounded-full bg-orange-500 text-white flex items-center gap-2 font-black shadow-lg shadow-orange-500/20">
               <Flame className="w-5 h-5 fill-current" />
               <span>{streak}</span>
             </div>
@@ -807,10 +814,10 @@ export default function DashboardClient() {
                         <div className="p-2 rounded-lg bg-primary/10 border border-primary/20"><Sparkles className="w-4 h-4 text-primary" /></div>
                         <span className="font-bold text-sm uppercase tracking-widest text-primary"></span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 -mt-4">
                         <button
                           onClick={() => setAssistMode(!assistMode)}
-                          className={cn("flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-sm uppercase tracking-widest border", assistMode ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-muted text-muted-foreground border-border hover:bg-muted/80")}
+                          className={cn("flex items-center gap-2 px-6 py-2.5 rounded-full font-black transition-all text-[10px] uppercase tracking-widest border", assistMode ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-muted text-muted-foreground border-border hover:bg-muted/80")}
                         >
                           <Wand2 className="w-4 h-4" />
                           Expert Guidance {assistMode ? "ON" : "OFF"}
@@ -847,24 +854,19 @@ export default function DashboardClient() {
                     <>
                       {assistMode && isRecording && (
                         <div
-                          
-                          
-                          
-                          className="fixed bottom-32 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-50"
+                          className="w-full max-w-2xl px-6 mt-6"
                         >
-                          <div className="glass-card p-6 rounded-[2rem] border-primary/30 shadow-2xl flex flex-col items-center gap-4">
+                          <div className="glass-card p-6 rounded-[2rem] border-primary/30 shadow-2xl flex flex-col items-center gap-4 bg-background/50 backdrop-blur-md">
                             <div className="flex items-center gap-3">
                               <Sparkles className={cn("w-4 h-4 text-primary", isFetchingAssist && "animate-spin")} />
                               <span className="text-primary font-black text-xs uppercase tracking-[0.2em]">
-                                {isFetchingAssist ? "AI Analysis in progress..." : "Recommended Talk Points"}
+                                {isFetchingAssist ? "AI Analysis..." : "Talk Points"}
                               </span>
                             </div>
-                            <div className="flex flex-wrap justify-center gap-3">
-                              {(suggestions.length > 0 ? suggestions : ["Loading points..."]).map((sug, i) => (
+                            <div className="flex flex-wrap justify-center gap-2">
+                              {(suggestions.length > 0 ? suggestions : ["Loading..."]).map((sug, i) => (
                                 <div key={i}
-                                  
-                                  
-                                  className="px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-sm md:text-base whitespace-nowrap"
+                                  className="px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs md:text-sm whitespace-nowrap"
                                 >
                                   {sug}
                                 </div>

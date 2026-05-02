@@ -270,10 +270,10 @@ export default function ResultsClient() {
           <div className="flex items-center gap-4">
             <button 
               onClick={() => router.push("/dashboard")}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-muted/50 border border-border text-foreground font-black text-xs uppercase tracking-widest hover:scale-105 transition-all"
+              className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg"
             >
               <LayoutGrid className="w-5 h-5" />
-              Menu
+              GO TO DASHBOARD
             </button>
             <button 
               onClick={downloadPDF}
