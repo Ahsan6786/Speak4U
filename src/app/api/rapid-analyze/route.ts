@@ -5,17 +5,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: Request) {
   try {
-    const { transcript, prompt, brutalMode } = await req.json();
-
-    if (!transcript) {
-      return NextResponse.json(
-        { error: "No transcript provided" },
-        { status: 400 }
-      );
-    }
+    const { answers, brutalMode } = await req.json();
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro-latest", // ✅ FIXED
+      model: "gemini-1.5-pro-latest",
     });
 
     const modeText = brutalMode
@@ -25,14 +18,10 @@ export async function POST(req: Request) {
     const systemPrompt = `
 ${modeText}
 
-Analyze this speech:
+Analyze these rapid-fire answers:
+${answers.map((a: any, i: number) => `Q${i+1}: ${a.q}\nA${i+1}: ${a.a}`).join('\n\n')}
 
-"${transcript}"
-
-Goal:
-"${prompt}"
-
-Return ONLY valid JSON. No markdown.
+Return ONLY valid JSON. No markdown. No conversational filler.
 
 {
   "confidence_score": number,
@@ -46,12 +35,13 @@ Return ONLY valid JSON. No markdown.
   "tone_analysis": string,
   "filler_words_detected": number,
   "pace_feedback": string,
-  "vocab_words": string[]
+  "vocab_words": [{"word": string, "meaning": string}],
+  "per_answer_summaries": string[],
+  "ideal_answers": string[]
 }
 `;
 
     const result = await model.generateContent(systemPrompt);
-
     const raw = result.response.text();
 
     const cleaned = raw
@@ -60,14 +50,12 @@ Return ONLY valid JSON. No markdown.
       .trim();
 
     let parsed;
-
     try {
       parsed = JSON.parse(cleaned);
     } catch (e) {
-      console.error("RAW AI RESPONSE:", cleaned);
-
+      console.error("RAW AI RESPONSE:", raw);
       return NextResponse.json(
-        { error: "Invalid AI JSON", raw: cleaned },
+        { error: "Invalid AI JSON", raw: raw },
         { status: 500 }
       );
     }
@@ -75,11 +63,10 @@ Return ONLY valid JSON. No markdown.
     return NextResponse.json(parsed);
 
   } catch (error: any) {
-    console.error("API ERROR:", error);
-
+    console.error("Rapid analyze failed:", error);
     return NextResponse.json(
       {
-        error: "Deep analyze failed",
+        error: "Rapid analyze failed",
         message: error.message,
       },
       { status: 500 }

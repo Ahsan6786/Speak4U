@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro-latest", // ✅ FIXED
+      model: "gemini-1.5-pro-latest",
     });
 
     const modeText = brutalMode
@@ -26,13 +26,12 @@ export async function POST(req: Request) {
 ${modeText}
 
 Analyze this speech:
-
 "${transcript}"
 
 Goal:
 "${prompt}"
 
-Return ONLY valid JSON. No markdown.
+Return ONLY valid JSON. No markdown. No conversational filler.
 
 {
   "confidence_score": number,
@@ -46,12 +45,11 @@ Return ONLY valid JSON. No markdown.
   "tone_analysis": string,
   "filler_words_detected": number,
   "pace_feedback": string,
-  "vocab_words": string[]
+  "vocab_words": [{"word": string, "meaning": string}]
 }
 `;
 
     const result = await model.generateContent(systemPrompt);
-
     const raw = result.response.text();
 
     const cleaned = raw
@@ -60,14 +58,12 @@ Return ONLY valid JSON. No markdown.
       .trim();
 
     let parsed;
-
     try {
       parsed = JSON.parse(cleaned);
     } catch (e) {
-      console.error("RAW AI RESPONSE:", cleaned);
-
+      console.error("RAW AI RESPONSE:", raw);
       return NextResponse.json(
-        { error: "Invalid AI JSON", raw: cleaned },
+        { error: "Invalid AI JSON", raw: raw },
         { status: 500 }
       );
     }
@@ -76,7 +72,6 @@ Return ONLY valid JSON. No markdown.
 
   } catch (error: any) {
     console.error("API ERROR:", error);
-
     return NextResponse.json(
       {
         error: "Deep analyze failed",

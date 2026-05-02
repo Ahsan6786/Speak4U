@@ -156,7 +156,7 @@ export default function ResultsClient() {
 
       setLoading(true);
       try {
-        const endpoint = isRapidFire ? "/api/analyze-rapid" : "/api/analyze";
+        const endpoint = isRapidFire ? "/api/rapid-analyze" : "/api/deep-analyze";
         const body = isRapidFire 
           ? { answers: rapidFireData, brutalMode }
           : { transcript, prompt, brutalMode };
