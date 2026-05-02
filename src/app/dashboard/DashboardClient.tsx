@@ -100,6 +100,9 @@ export default function DashboardClient() {
       return;
     }
 
+    // Warm up the microphone early for instant practice
+    requestPermission();
+
     if (!prompt) fetchNewQuestion();
 
     const userDocRef = doc(db, "users", user.uid);
