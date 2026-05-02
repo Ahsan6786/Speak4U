@@ -80,12 +80,12 @@ export default function Home() {
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
 
       {/* --- NAVIGATION --- */}
-      <nav className="absolute top-0 w-full z-[100] py-10">
+      <nav className="absolute top-0 w-full z-[100] py-6 md:py-10">
         <div className="max-w-[1400px] mx-auto px-6">
           <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? "bg-black/60  border border-white/5 p-4 rounded-2xl shadow-2xl" : ""
             }`}>
             <Link href="/" className="flex items-center">
-              <Image src="/splash.png" alt="Logo" width={320} height={100} className="w-auto h-20 md:h-32" priority />
+              <Image src="/splash.png" alt="Logo" width={320} height={100} className="w-auto h-16 md:h-32" priority />
             </Link>
 
             <div className="flex items-center gap-6">
@@ -108,7 +108,7 @@ export default function Home() {
       </nav>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative h-svh md:min-h-screen flex flex-col items-center justify-center px-6 pt-44 md:pt-64 overflow-hidden">
+      <section className="relative h-svh md:min-h-screen flex flex-col items-center justify-center px-6 pt-72 md:pt-80 overflow-hidden">
         
         <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-10 md:gap-20">
           <div className=" ">
