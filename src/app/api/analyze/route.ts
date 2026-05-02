@@ -15,7 +15,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No transcript provided" }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    console.log("Starting analysis with gemini-1.5-flash-latest...");
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
     const systemPrompt = `
       You are a world-class elite communication coach for "REVIAL". 
