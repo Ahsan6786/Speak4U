@@ -5,6 +5,7 @@ import { useState, useRef, useCallback } from "react";
 export function useVoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -13,6 +14,7 @@ export function useVoiceRecorder() {
   const startRecording = useCallback(() => {
     setTranscript("");
     setAudioBlob(null);
+    setError(null);
     chunksRef.current = [];
 
     // Setup Web Speech API
@@ -35,7 +37,11 @@ export function useVoiceRecorder() {
       recognition.onerror = (event: any) => {
         if (event.error === 'aborted' || event.error === 'no-speech') return;
         console.error("Speech Recognition Error:", event.error);
-        // Don't stop recording on error, try to keep going
+        if (event.error === 'not-allowed') {
+          setError("Microphone access blocked. Please check your browser settings.");
+        } else {
+          setError(`Recognition error: ${event.error}`);
+        }
       };
 
       recognition.onend = () => {
@@ -101,6 +107,7 @@ export function useVoiceRecorder() {
   return {
     isRecording,
     transcript,
+    error,
     audioBlob,
     startRecording,
     stopRecording,

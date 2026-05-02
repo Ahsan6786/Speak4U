@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2, Command, Settings, User } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -16,7 +16,7 @@ import { doc, setDoc, onSnapshot, collection, query, orderBy, limit, deleteDoc }
 export default function DashboardClient() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
-  const { isRecording, transcript, startRecording, stopRecording, clearTranscript, audioBlob, requestPermission } = useVoiceRecorder();
+  const { isRecording, transcript, error: micError, startRecording, stopRecording, clearTranscript, audioBlob, requestPermission } = useVoiceRecorder();
   const [timeLeft, setTimeLeft] = useState(60);
   const [prompt, setPrompt] = useState("");
   const [streak, setStreak] = useState(0);
@@ -31,12 +31,14 @@ export default function DashboardClient() {
   const [isFetchingQuestion, setIsFetchingQuestion] = useState(false);
   const [isRapidFire, setIsRapidFire] = useState(false);
   const [rapidFireStep, setRapidFireStep] = useState(0);
-  const [rapidFireAnswers, setRapidFireAnswers] = useState<{q: string, a: string}[]>([]);
+  const [rapidFireAnswers, setRapidFireAnswers] = useState<{ q: string, a: string }[]>([]);
   const searchParams = useSearchParams();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
 
   const fetchNewQuestion = async (force = false) => {
     if (isFetchingQuestion && !force) return;
@@ -62,28 +64,26 @@ export default function DashboardClient() {
   };
 
   const startPractice = async (rapid = false) => {
-    // 1. Switch View IMMEDIATELY to eliminate lag
-    setView("practice");
-    setIsRapidFire(rapid);
-    if (rapid) {
-      setRapidFireStep(1);
-      setRapidFireAnswers([]);
-    } else {
-      setRapidFireStep(0);
-    }
-
-    // 2. Handle permissions and data in background
     const granted = await requestPermission();
     if (granted) {
-      await fetchNewQuestion();
       if (rapid) {
+        setIsRapidFire(true);
+        setRapidFireStep(1);
+        setRapidFireAnswers([]);
+        setView("practice");
+        await fetchNewQuestion();
+        // AUTO START RECORDING FOR RAPID FIRE
         setTimeout(() => {
           handleStart();
-        }, 800); 
+        }, 800);
+      } else {
+        setIsRapidFire(false);
+        setRapidFireStep(0);
+        setView("practice");
+        await fetchNewQuestion();
       }
     } else {
       alert("Microphone access is required to practice. Please enable it in your browser settings.");
-      setView("history");
     }
   };
 
@@ -103,18 +103,44 @@ export default function DashboardClient() {
     if (!prompt) fetchNewQuestion();
 
     const userDocRef = doc(db, "users", user.uid);
-    const unsubUser = onSnapshot(userDocRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
-        setStreak(data.streak || 0);
+    const unsubUser = onSnapshot(userDocRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
         setUserName(data.name || "");
+        setNewUserName(data.name || "");
+
+        // --- STREAK LOGIC ---
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+        const lastDate = data.lastActivityDate || "";
+
+        if (lastDate !== todayStr) {
+          const lastDateObj = lastDate ? new Date(lastDate) : null;
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+          if (lastDate !== yesterdayStr && lastDate !== todayStr) {
+            // Missed a day or first time
+            if (data.streak !== 0) {
+              await setDoc(userDocRef, { streak: 0 }, { merge: true });
+            }
+          }
+        }
+
+        setStreak(data.streak || 0);
+
         if (!data.onboarded) {
           router.push("/onboarding");
         } else {
           setDataLoading(false);
         }
       } else {
-        setDoc(userDocRef, { streak: 0, onboarded: false }, { merge: true });
+        await setDoc(userDocRef, {
+          streak: 0,
+          onboarded: false,
+          lastActivityDate: ""
+        }, { merge: true });
         router.push("/onboarding");
       }
     });
@@ -130,6 +156,13 @@ export default function DashboardClient() {
       unsubHistory();
     };
   }, [user, authLoading, router]);
+
+  // --- AUTO-REQUEST MIC PERMISSION ---
+  useEffect(() => {
+    if (!dataLoading && user) {
+      requestPermission().catch(err => console.error("Mic permission denied:", err));
+    }
+  }, [dataLoading, user, requestPermission]);
 
   useEffect(() => {
     if (isRecording && timeLeft > 0) {
@@ -207,21 +240,21 @@ export default function DashboardClient() {
         setRapidFireStep(nextStep);
         setIsAnalyzing(false);
         setTimeLeft(60);
-        
+
         // INSTANT TRANSITION
-        stopRecording(); 
+        stopRecording();
         clearTranscript();
         await fetchNewQuestion(true);
-        
+
         // AUTO-START NEXT RECORDING IMMEDIATELY
         setTimeout(() => {
           startRecording();
-        }, 100); 
+        }, 100);
         return;
       }
 
       // Final step
-      const allAnswers = isRapidFire 
+      const allAnswers = isRapidFire
         ? [...rapidFireAnswers, currentAnswer]
         : [currentAnswer];
 
@@ -229,23 +262,49 @@ export default function DashboardClient() {
       sessionStorage.setItem("last_prompt", prompt);
       sessionStorage.setItem("is_rapid_fire", isRapidFire ? "true" : "false");
       sessionStorage.setItem("rapid_fire_data", JSON.stringify(allAnswers));
-      
+
       if (isRapidFire) {
         setIsAnalyzing(false);
-        setRapidFireStep(7); 
+        setRapidFireStep(7);
         stopRecording();
         return;
       }
 
       if (audioBlob) {
         const reader = new FileReader();
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
           sessionStorage.setItem("last_audio", reader.result as string);
+
+          // Update Streak on Completion
+          if (user) {
+            const todayStr = new Date().toISOString().split("T")[0];
+            const userDocRef = doc(db, "users", user.uid);
+
+            // We use the 'streak' state from the component
+            const lastActivity = sessionStorage.getItem("last_update_date");
+            if (lastActivity !== todayStr) {
+              await setDoc(userDocRef, {
+                streak: streak + 1,
+                lastActivityDate: todayStr
+              }, { merge: true });
+              sessionStorage.setItem("last_update_date", todayStr);
+            }
+          }
+
           fetchNewQuestion(true);
           router.push("/results");
         };
         reader.readAsDataURL(audioBlob);
       } else {
+        // Handle case without audioBlob
+        if (user) {
+          const todayStr = new Date().toISOString().split("T")[0];
+          const userDocRef = doc(db, "users", user.uid);
+          await setDoc(userDocRef, {
+            streak: streak + 1,
+            lastActivityDate: todayStr
+          }, { merge: true });
+        }
         fetchNewQuestion(true);
         router.push("/results");
       }
@@ -269,56 +328,81 @@ export default function DashboardClient() {
   // --- RAPID FIRE FULLSCREEN MODE ---
   if (view === "practice" && isRapidFire && rapidFireStep <= 6) {
     return (
-      <div className="fixed inset-0 z-[200] bg-[#000000] text-white flex flex-col items-center justify-between p-8 md:p-20 overflow-hidden font-sans">
+      <div className="fixed inset-0 z-[200] bg-[#020202] text-white flex flex-col items-center justify-between p-8 md:p-16 overflow-hidden font-sans">
+        {/* Cinematic Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] bg-red-600/5 blur-[120px] rounded-full animate-pulse" />
+        </div>
+
         {/* Top: Progress */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-4xl flex items-center justify-between"
+          className="w-full max-w-5xl flex items-center justify-between relative z-10"
         >
           <div className="flex items-center gap-6">
             <button
               onClick={() => setView("history")}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all shadow-sm"
-              title="Go Back"
+              className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all active:scale-95"
             >
               <LayoutGrid className="w-5 h-5" />
             </button>
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500">Rapid Fire Drill</span>
-              <h3 className="text-xl font-bold tracking-tighter">Question {rapidFireStep} of 6</h3>
+            <div className="flex flex-col">
+              <h3 className="text-[10px] md:text-sm font-bold tracking-widest uppercase opacity-40">Phase {rapidFireStep} of 6</h3>
             </div>
           </div>
-          <div className="flex gap-1">
-            {[1,2,3,4,5,6].map(s => (
-              <div key={s} className={cn("h-1.5 w-8 rounded-full transition-all duration-500", s <= rapidFireStep ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-white/10")} />
+
+          <div className="hidden sm:flex gap-2">
+            {[1, 2, 3, 4, 5, 6].map(s => (
+              <div
+                key={s}
+                className={cn(
+                  "h-1.5 w-10 rounded-full transition-all duration-700",
+                  s < rapidFireStep ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]" :
+                    s === rapidFireStep ? "bg-white animate-pulse" : "bg-white/10"
+                )}
+              />
             ))}
           </div>
         </motion.div>
 
         {/* Center: Question */}
-        <div className="w-full max-w-5xl text-center flex flex-col items-center justify-center">
+        <div className="w-full max-w-4xl text-center flex flex-col items-center justify-center relative z-10">
           <AnimatePresence mode="wait">
             <motion.div
               key={prompt}
-              initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -30, filter: "blur(10px)" }}
-              transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
-              className="space-y-12"
+              initial={{ opacity: 0, scale: 0.95, filter: "blur(20px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 1.05, filter: "blur(20px)" }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-8 md:space-y-12 w-full"
             >
-              <h2 className="text-4xl md:text-7xl font-black leading-[1.1] tracking-tight italic">
+              <h2 className="text-2xl md:text-7xl font-black leading-[1.1] tracking-tight italic bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 px-4">
                 "{prompt}"
               </h2>
+
               {isRecording && (
-                <div className="flex flex-col items-center gap-6">
-                   <div className="flex items-center gap-4 text-red-500 font-black text-xl tracking-tighter animate-pulse">
-                    <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                    {timeLeft}s REMAINING
+                <div className="flex flex-col items-center gap-10">
+                  <div className="flex items-center gap-6">
+                    <div className="px-6 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-black text-xs tracking-[0.3em] flex items-center gap-3">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      {timeLeft}s REMAINING
+                    </div>
                   </div>
-                  <p className="text-white/40 text-lg md:text-2xl font-medium italic max-w-3xl line-clamp-2">
-                    {transcript || "Listening..."}
-                  </p>
+
+                  {micError ? (
+                    <div className="bg-red-500/10 border border-red-500/20 px-6 py-4 rounded-2xl text-red-500 font-bold text-sm animate-bounce">
+                      {micError}
+                    </div>
+                  ) : (
+                    <p className="text-white/40 text-lg md:text-3xl font-medium italic max-w-3xl line-clamp-3 min-h-[4rem] px-4">
+                      {transcript || "Speak now..."}
+                    </p>
+                  )}
                 </div>
               )}
             </motion.div>
@@ -326,35 +410,37 @@ export default function DashboardClient() {
         </div>
 
         {/* Bottom: Actions */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-center gap-8"
+          className="w-full max-w-4xl flex flex-col items-center justify-center gap-8 relative z-10"
         >
           {!isRecording && !isAnalyzing ? (
             <button
               onClick={handleStart}
-              className="group flex items-center justify-center gap-6 bg-white text-black px-16 py-8 rounded-[2.5rem] font-black text-3xl hover:scale-105 active:scale-95 transition-all shadow-2xl"
+              className="group flex items-center justify-center gap-4 bg-emerald-600 text-white px-10 py-5 rounded-full font-black text-lg md:text-xl hover:bg-emerald-500 hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50px_rgba(16,185,129,0.3)]"
             >
-              <Mic className="w-8 h-8" />
-              START DRILL
+              <Mic className="w-5 h-5 md:w-6 md:h-6" />
+              BEGIN DRILL
             </button>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center gap-6 w-full justify-center">
-               <button
-                onClick={stopRecording}
-                className="w-full sm:w-auto flex items-center justify-center gap-4 px-10 py-6 rounded-3xl bg-white/5 border-2 border-white/10 text-white/60 font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-95"
-              >
-                <StopCircle className="w-6 h-6" />
-                STOP
-              </button>
-              <button
-                onClick={handleFinish}
-                className="w-full sm:w-auto flex items-center justify-center gap-6 px-16 py-7 rounded-[2.5rem] bg-red-600 text-white font-black text-2xl hover:bg-red-500 hover:scale-105 transition-all shadow-[0_0_50px_rgba(220,38,38,0.3)] active:scale-95"
-              >
-                {rapidFireStep < 6 ? "NEXT QUESTION" : "FINISH DRILL"}
-                <ChevronRight className="w-8 h-8" />
-              </button>
+            <div className="flex flex-col items-center gap-8 w-full">
+              <div className="flex gap-4">
+                <button
+                  onClick={stopRecording}
+                  className="px-12 py-5 rounded-full bg-white/5 border border-white/10 text-white/60 font-black uppercase tracking-widest text-[10px] hover:bg-red-500 hover:text-white hover:border-red-500 transition-all active:scale-95"
+                >
+                  <StopCircle className="w-5 h-5 mb-1 mx-auto" />
+                  ABORT
+                </button>
+                <button
+                  onClick={handleFinish}
+                  className="px-12 py-5 rounded-full bg-white text-black font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all active:scale-95 shadow-xl"
+                >
+                  <ChevronRight className="w-5 h-5 mb-1 mx-auto" />
+                  SUBMIT
+                </button>
+              </div>
             </div>
           )}
         </motion.div>
@@ -378,7 +464,7 @@ export default function DashboardClient() {
           <p className="text-xl md:text-2xl text-white/50 mb-16 max-w-2xl font-medium">
             Excellent focus. All 6 responses have been captured. Your performance audit is ready for analysis.
           </p>
-          <button 
+          <button
             onClick={() => router.push("/results")}
             className="group px-16 py-8 rounded-[3rem] bg-white text-black font-black text-3xl flex items-center justify-center gap-6 hover:scale-105 transition-all shadow-2xl active:scale-95"
           >
@@ -391,7 +477,7 @@ export default function DashboardClient() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6 md:p-12 overflow-hidden selection:bg-primary/30 transition-colors duration-300 relative">
+    <div className="min-h-screen bg-background text-foreground p-6 md:p-12 overflow-hidden selection:bg-primary/30 relative">
       <AnimatePresence>
         {sessionToDelete && (
           <motion.div
@@ -461,6 +547,65 @@ export default function DashboardClient() {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/40 backdrop-blur-md p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-card/80 border border-white/10 p-10 rounded-[3rem] shadow-[0_32px_64px_rgba(0,0,0,0.4)] max-w-md w-full relative overflow-hidden transform-gpu will-change-transform"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] -mr-16 -mt-16" />
+              
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="w-20 h-20 rounded-[1.5rem] bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-6 shadow-inner">
+                  <User className="w-10 h-10" />
+                </div>
+                
+                <h3 className="text-3xl font-black tracking-tight mb-2">Profile Settings</h3>
+                <p className="text-muted-foreground text-sm font-medium italic mb-10">Update your details for the dashboard.</p>
+                
+                <div className="w-full space-y-6 mb-10 text-left">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mb-3 block px-1">Display Name</label>
+                    <input
+                      type="text"
+                      value={newUserName}
+                      onChange={(e) => setNewUserName(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 px-6 py-4 rounded-2xl font-bold text-foreground outline-none focus:border-primary/50 focus:bg-white/[0.08] transition-all placeholder:opacity-30"
+                      placeholder="e.g. Ahsan"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-4 w-full">
+                  <button
+                    onClick={() => setShowSettings(false)}
+                    className="flex-1 py-4 rounded-2xl font-bold bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (user) {
+                        await setDoc(doc(db, "users", user.uid), { name: newUserName }, { merge: true });
+                        setShowSettings(false);
+                      }
+                    }}
+                    className="flex-1 py-4 rounded-2xl font-black bg-primary text-white hover:scale-[1.03] active:scale-95 transition-all shadow-lg shadow-primary/30"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[150px] rounded-full -mr-64 -mt-64 pointer-events-none opacity-50"></div>
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/5 blur-[150px] rounded-full -ml-64 -mb-64 pointer-events-none opacity-50"></div>
@@ -477,6 +622,13 @@ export default function DashboardClient() {
               <LayoutGrid className="w-5 h-5" />
             </button>
             <ThemeToggle />
+            <button
+              onClick={() => setShowSettings(true)}
+              className="w-12 h-12 rounded-2xl bg-card border-2 border-border flex items-center justify-center text-foreground hover:text-primary hover:bg-primary/10 hover:border-primary/20 transition-all hover:scale-105 shadow-sm"
+              title="Settings"
+            >
+              <Command className="w-5 h-5" />
+            </button>
             <button
               onClick={() => setShowSignOutConfirm(true)}
               className="w-12 h-12 rounded-2xl bg-card border-2 border-border flex items-center justify-center text-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all hover:scale-105 shadow-sm"
@@ -498,45 +650,45 @@ export default function DashboardClient() {
           {view === "history" ? (
             <motion.div
               key="history-view"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-12"
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="space-y-12 transform-gpu will-change-transform"
             >
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 via-blue-500/10 to-purple-500/10 rounded-[3rem] blur-2xl opacity-0 group-hover:opacity-40 transition duration-1000" />
-                <div className="relative flex flex-col md:flex-row items-center justify-between gap-10 rounded-[3rem] p-10 md:p-14 bg-card/40 backdrop-blur-xl border border-white/5 shadow-2xl overflow-hidden ring-1 ring-white/10 will-change-transform">
-                  <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 blur-[100px] -mr-40 -mt-40" />
-                  
-                  <div className="relative z-10 space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/70">Session Ready</span>
+              <div className="relative">
+                <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 rounded-[2rem] p-8 md:p-10 bg-card/40 supports-[backdrop-filter]:backdrop-blur-xl border border-white/5 shadow-xl overflow-hidden ring-1 ring-white/10 transform-gpu will-change-transform translate-z-0">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] -mr-32 -mt-32" />
+
+                  <div className="relative z-10 space-y-3 text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-500/70">Session Ready</span>
                     </div>
-                    <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-foreground italic leading-none">
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-foreground italic leading-none">
                       Hello, {userName || "Speaker"}
                     </h1>
-                    <p className="text-xl text-muted-foreground font-medium italic">
+                    <p className="text-lg text-muted-foreground font-medium italic">
                       Ready to perfect your delivery?
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto relative z-10">
-                    <button 
+                  <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto relative z-10">
+                    <button
                       onClick={() => startPractice(false)}
-                      className="group flex items-center justify-center gap-3 bg-white text-black px-10 py-5 rounded-[2rem] font-black text-xl hover:scale-[1.03] active:scale-95 transition-all shadow-xl shadow-white/5"
+                      className="group flex items-center justify-center gap-2 bg-white text-black px-8 py-4 rounded-full font-black text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
                     >
-                      <Play className="w-6 h-6 fill-current" />
+                      <Play className="w-5 h-5 fill-current" />
                       PRACTICE
-                      <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => startPractice(true)}
-                      className="group flex items-center justify-center gap-3 bg-red-600 text-white px-10 py-5 rounded-[2rem] font-black text-xl hover:bg-red-500 hover:scale-[1.03] active:scale-95 transition-all shadow-xl shadow-red-600/20"
+                      className="group flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-full font-black text-lg hover:bg-emerald-500 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-emerald-600/10"
                     >
-                      <Flame className="w-6 h-6 fill-current" />
+                      <Flame className="w-5 h-5 fill-current" />
                       RAPID FIRE
-                      <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </button>
                   </div>
                 </div>
@@ -546,28 +698,27 @@ export default function DashboardClient() {
                 {/* THE TELEPROMPTER - GOD TIER */}
                 <Link
                   href="/speak-with-me"
-                  className="group relative flex flex-col items-start p-12 rounded-[4rem] bg-gradient-to-br from-white/[0.08] to-transparent backdrop-blur-xl border border-white/10 hover:border-primary/50 transition-all duration-700 shadow-[0_30px_100px_rgba(0,0,0,0.5)] overflow-hidden will-change-transform"
+                  className="group relative flex flex-col items-start p-10 rounded-[3rem] bg-gradient-to-br from-white/[0.08] to-transparent supports-[backdrop-filter]:backdrop-blur-2xl border border-white/10 hover:border-primary/50 transition-all duration-700 shadow-[0_30px_60px_rgba(0,0,0,0.4)] overflow-hidden transform-gpu will-change-transform translate-z-0"
                 >
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.15)_0%,transparent_50%)]" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.2)_0%,transparent_50%)]" />
                   <div className="absolute -inset-[100%] group-hover:inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out" />
-                  <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-150 transition-transform duration-1000" />
-                  
-                  <div className="relative z-10 w-20 h-20 rounded-[2rem] bg-primary text-white flex items-center justify-center mb-10 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-[0_0_40px_rgba(59,130,246,0.5)]">
-                    <FastForward className="w-10 h-10" />
-                  </div>
-                  
-                  <div className="relative z-10 space-y-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-[2px] bg-primary rounded-full" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Challenge Mode</span>
-                    </div>
-                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">THE <br/> TELEPROMPTER</h3>
-                    <p className="text-lg md:text-xl text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
-                      Master the art of <span className="text-primary font-bold">focus</span> under fire.
-                    </p>
+                  <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/20 blur-[80px] rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-150 transition-transform duration-1000" />
+
+                  <div className="relative z-10 w-16 h-16 rounded-[1.5rem] bg-primary text-white flex items-center justify-center mb-10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-[0_10px_40px_rgba(59,130,246,0.5)]">
+                    <FastForward className="w-8 h-8" />
                   </div>
 
-                  <div className="relative z-10 mt-12 flex items-center gap-3 px-8 py-3.5 rounded-full bg-primary text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/30 hover:scale-105 transition-all">
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-[2px] bg-primary rounded-full animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.5em] text-primary/80"></span>
+                    </div>
+                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic text-foreground leading-[0.85] uppercase">THE <br /> TELEPROMPTER</h3>
+                    <p className="text-base md:text-lg text-muted-foreground font-medium italic opacity-70 group-hover:opacity-100 transition-opacity max-w-[280px]">
+                      Practice your <span className="text-primary font-bold">speaking skills</span> for big moments.
+                    </p>
+                  </div>
+                  <div className="relative z-10 mt-10 flex items-center gap-3 px-8 py-3.5 rounded-full bg-primary text-white font-black uppercase tracking-widest text-[10px] shadow-[0_15px_30px_rgba(59,130,246,0.4)] hover:scale-105 hover:bg-white hover:text-primary transition-all">
                     START NOW <ArrowRight className="w-4 h-4" />
                   </div>
                 </Link>
@@ -575,29 +726,28 @@ export default function DashboardClient() {
                 {/* PERFORMANCE HISTORY - GOD TIER */}
                 <Link
                   href="/reports"
-                  className="group relative flex flex-col items-start p-12 rounded-[4rem] bg-gradient-to-br from-white/[0.08] to-transparent backdrop-blur-xl border border-white/10 hover:border-emerald-500/50 transition-all duration-700 shadow-[0_30px_100px_rgba(0,0,0,0.5)] overflow-hidden will-change-transform"
+                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent supports-[backdrop-filter]:backdrop-blur-xl border border-white/10 hover:border-emerald-500/50 transition-all duration-700 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden transform-gpu will-change-transform translate-z-0"
                 >
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.15)_0%,transparent_50%)]" />
                   <div className="absolute -inset-[100%] group-hover:inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out" />
-                  <div className="absolute bottom-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-150 transition-transform duration-1000" />
-                  
-                  <div className="relative z-10 w-20 h-20 rounded-[2rem] bg-emerald-500 text-white flex items-center justify-center mb-10 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500 shadow-[0_0_40px_rgba(16,185,129,0.5)]">
-                    <History className="w-10 h-10" />
-                  </div>
-                  
-                  <div className="relative z-10 space-y-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-[2px] bg-emerald-500 rounded-full" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500">Data Vault</span>
-                    </div>
-                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">SPEECH <br/> ANALYTICS</h3>
-                    <p className="text-lg md:text-xl text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
-                      Your journey to <span className="text-emerald-500 font-bold">mastery</span> is mapped here.
-                    </p>
+                  <div className="absolute bottom-0 right-0 w-48 h-48 bg-emerald-500/10 blur-[60px] rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-150 transition-transform duration-1000" />
+
+                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
+                    <History className="w-7 h-7" />
                   </div>
 
-                  <div className="relative z-10 mt-12 flex items-center gap-3 px-8 py-3.5 rounded-full bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all">
-                    VIEW REPORTS <ArrowRight className="w-4 h-4" />
+                  <div className="relative z-10 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-[1.5px] bg-emerald-500 rounded-full" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-emerald-500"></span>
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">SPEECH <br /> ANALYTICS</h3>
+                    <p className="text-sm md:text-base text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
+                      See how <span className="text-emerald-500 font-bold">well you are doing</span> here.
+                    </p>
+                  </div>
+                  <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-emerald-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all">
+                    SEE REPORTS <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </Link>
               </div>
@@ -611,7 +761,7 @@ export default function DashboardClient() {
             >
               <AnimatePresence mode="wait">
                 {rapidFireStep === 7 ? (
-                  <motion.div 
+                  <motion.div
                     key="rapid-fire-finished"
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -624,7 +774,7 @@ export default function DashboardClient() {
                     <p className="text-xl text-muted-foreground mb-12 max-w-lg">
                       You've successfully powered through 6 intense speaking challenges. Ready to see your comprehensive performance audit?
                     </p>
-                    <button 
+                    <button
                       onClick={() => router.push("/results")}
                       className="w-full sm:w-auto px-12 py-6 rounded-[2rem] bg-red-500 text-white font-black text-2xl flex items-center justify-center gap-4 hover:scale-105 transition-transform shadow-2xl shadow-red-500/20"
                     >
@@ -702,7 +852,7 @@ export default function DashboardClient() {
 
                     <AnimatePresence>
                       {assistMode && isRecording && (
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 20 }}
@@ -717,7 +867,7 @@ export default function DashboardClient() {
                             </div>
                             <div className="flex flex-wrap justify-center gap-3">
                               {(suggestions.length > 0 ? suggestions : ["Loading points..."]).map((sug, i) => (
-                                <motion.div 
+                                <motion.div
                                   key={i}
                                   initial={{ opacity: 0, scale: 0.9 }}
                                   animate={{ opacity: 1, scale: 1 }}
@@ -795,10 +945,10 @@ export default function DashboardClient() {
                               disabled={isAnalyzing}
                               className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-10 py-5 rounded-[1.8rem] blue-gradient text-white font-black text-lg blue-glow hover:scale-[1.03] active:scale-95 disabled:opacity-50 transition-all shadow-xl shadow-blue-500/20"
                             >
-                              {isAnalyzing 
-                                ? "ANALYZING..." 
-                                : isRapidFire 
-                                  ? (rapidFireStep < 6 ? "NEXT QUESTION" : "FINISH ROUND") 
+                              {isAnalyzing
+                                ? "ANALYZING..."
+                                : isRapidFire
+                                  ? (rapidFireStep < 6 ? "NEXT QUESTION" : "FINISH ROUND")
                                   : "SEE RESULT"
                               }
                               <ChevronRight className="w-6 h-6" />

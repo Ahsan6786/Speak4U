@@ -1,410 +1,476 @@
 "use client";
 
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import { Mic, Shield, TrendingUp, LogOut, ArrowRight, Play, AudioLines, Sparkles } from "lucide-react";
+import Image from "next/image";
+import {
+  Mic, Shield, TrendingUp, LogOut, ArrowRight,
+  Zap, Globe, ChevronRight, Activity, Command,
+  Cpu, Layers, Volume2, Fingerprint, BarChart3,
+  Dna, Play, Pause, Sparkles, MoveRight
+} from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { AuthModal } from "@/components/auth-modal";
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useSpring, useInView } from "framer-motion";
 
-export default function Home() {
-  const { user, logout } = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const words = ["voice.", "clarity.", "confidence.", "influence."];
-
-  // Audio Bar Animation state for the mock UI
-  const [bars, setBars] = useState<number[]>(Array(24).fill(10));
+// --- SUB-COMPONENT: DYNAMIC PARTICLE BACKGROUND ---
+const HeroParticles = () => {
+  const [mounted, setMounted] = useState(false);
+  
   useEffect(() => {
-    const interval = setInterval(() => {
-      setBars(Array.from({ length: 24 }, () => Math.floor(Math.random() * 40) + 10));
-    }, 300); // Reduced frequency for performance
-    return () => clearInterval(interval);
+    setMounted(true);
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2500);
-    return () => clearTimeout(timer);
+  const particles = useMemo(() => {
+    return [...Array(12)].map((_, i) => ({
+      id: i,
+      x: Math.random() * 100 + "%",
+      y: Math.random() * 100 + "%",
+      opacity: Math.random() * 0.5 + 0.1,
+      targetY: Math.random() * -100 - 50,
+      duration: Math.random() * 5 + 10,
+    }));
   }, []);
 
+  if (!mounted) return null;
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#FFD70005_0%,transparent_50%)]" />
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute w-1.5 h-1.5 bg-yellow-500/10 rounded-full will-change-transform"
+          style={{ transform: "translateZ(0)", left: p.x, top: p.y }}
+          initial={{ opacity: 0 }}
+          animate={{
+            y: [0, p.targetY],
+            opacity: [0, p.opacity, 0]
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// --- SUB-COMPONENT: AI TERMINAL MOCKUP ---
+const TerminalMockup = () => {
+  const [lines, setLines] = useState<string[]>([]);
+  const consoleStrings = [
+    "> Initialize Neural Voice Engine...",
+    "> Frequency Analysis: OPTIMAL",
+    "> Detecting Filler Words: 'Uh', 'Like' suppressed.",
+    "> Confidence Quotient: 98.4%",
+    "> Resonance Calibration: ACTIVE",
+    "> Deploying Vocal Authority Matrix..."
+  ];
+
   useEffect(() => {
+    let i = 0;
     const interval = setInterval(() => {
-      setCurrentWordIndex((prev) => (prev + 1) % words.length);
-    }, 3000);
+      setLines((prev) => [...prev, consoleStrings[i]].slice(-5));
+      i = (i + 1) % consoleStrings.length;
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#000000] text-zinc-100 selection:bg-yellow-500/30 overflow-hidden font-sans relative">
-      
-      {/* Premium Parametric Signal Wave at Top */}
-      <div className="absolute top-0 left-0 w-full h-[15vh] opacity-80 pointer-events-none z-40 overflow-hidden">
-        <div className="relative w-full h-full">
-          {[1, 2, 3].map((i) => (
-            <motion.svg
-              key={i}
-              className="absolute inset-0 w-full h-full"
-              preserveAspectRatio="none"
-              viewBox="0 0 1440 120"
-              initial={{ x: i % 2 === 0 ? "-20%" : "20%" }}
-              animate={{ x: i % 2 === 0 ? ["-20%", "0%", "-20%"] : ["20%", "0%", "20%"] }}
-              transition={{ duration: 15 + i * 5, repeat: Infinity, ease: "linear" }}
-            >
-              <path
-                d="M0,60 C360,20 720,100 1440,60"
-                fill="none"
-                stroke={`url(#signal-gradient-${i})`}
-                strokeWidth={0.5 + i * 0.2}
-                className="opacity-40"
-              />
-              <defs>
-                <linearGradient id={`signal-gradient-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="transparent" />
-                  <stop offset="50%" stopColor="#FFC300" stopOpacity={0.5 - i * 0.1} />
-                  <stop offset="100%" stopColor="transparent" />
-                </linearGradient>
-              </defs>
-            </motion.svg>
-          ))}
-          {/* Subtle Glow beneath waves */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-full bg-yellow-500/5 blur-[80px]" />
-        </div>
+    <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-yellow-500/20 rounded-xl p-4 font-mono text-[10px] md:text-xs text-yellow-500/80 shadow-2xl">
+      <div className="flex gap-1.5 mb-3 border-b border-white/5 pb-2">
+        <div className="w-2 h-2 rounded-full bg-red-500/50" />
+        <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
+        <div className="w-2 h-2 rounded-full bg-green-500/50" />
       </div>
+      {lines.map((line, idx) => (
+        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={idx} className="mb-1">
+          {line}
+        </motion.div>
+      ))}
+      <motion.div animate={{ opacity: [0, 1] }} transition={{ repeat: Infinity, duration: 0.8 }} className="inline-block w-2 h-4 bg-yellow-500 align-middle ml-1" />
+    </div>
+  );
+};
 
-      {/* Splash Screen */}
-      <AnimatePresence>
-        {showSplash && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#000000]"
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="flex items-center justify-center"
-            >
-              <img 
-                src="/splash.png" 
-                alt="Splash Logo" 
-                className="w-64 h-64 md:w-96 md:h-96 object-contain drop-shadow-[0_0_60px_rgba(255,195,0,0.15)]" 
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+// --- SUB-COMPONENT: VISUALIZER MOCKUP ---
+const VisualizerMockup = () => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const bars = useMemo(() => {
+    return [...Array(40)].map((_, i) => ({
+      id: i,
+      heights: [10, Math.random() * 80 + 20, 10],
+      duration: 1.5,
+      delay: i * 0.05
+    }));
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center h-full gap-1">
+        {[...Array(40)].map((_, i) => (
+          <div key={i} className="w-1.5 h-4 bg-yellow-500/20 rounded-full" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-center h-full gap-1">
+      {bars.map((bar) => (
+        <motion.div
+          key={bar.id}
+          animate={{ height: bar.heights }}
+          transition={{ duration: bar.duration, repeat: Infinity, ease: "easeInOut", delay: bar.delay }}
+          className="w-1.5 bg-yellow-500/40 rounded-full will-change-transform"
+          style={{ transform: "translateZ(0)" }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// --- MAIN COMPONENT ---
+export default function Home() {
+  const { user, logout } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // High-performance scroll tracking
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <div className="relative min-h-screen bg-[#050505] text-zinc-100 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
+
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
 
-      {/* Navigation Header */}
-      <header className="absolute top-0 left-0 w-full py-8 px-6 md:px-12 z-50">
-        <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <img src="/splash.png" alt="REVIAL Logo" className="w-24 h-24 md:w-32 md:h-32 object-contain" />
-          </Link>
+      {/* --- NAVIGATION --- */}
+      <nav className={`fixed top-0 w-full z-[100] transition-all duration-700 ${scrolled ? "py-4" : "py-10"
+        }`}>
+        <div className="max-w-[1400px] mx-auto px-6">
+          <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? "bg-black/60 supports-[backdrop-filter]:backdrop-blur-2xl border border-white/5 p-4 rounded-2xl shadow-2xl" : ""
+            }`}>
+            <Link href="/" className="flex items-center no-underline border-none outline-none">
+              <Image src="/splash.png" alt="Logo" width={220} height={80} className="w-auto h-16 md:h-20" priority />
+            </Link>
 
-          <div className="flex items-center gap-8">
-            <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-500 tracking-tight">
-              <Link href="#platform" className="hover:text-white transition-colors">Platform</Link>
-              <Link href="#" className="hover:text-white transition-colors">Enterprise</Link>
-              <Link href="#" className="hover:text-white transition-colors">Pricing</Link>
-            </nav>
-            {user ? (
-              <div className="flex items-center gap-3">
-                <Link href="/dashboard" className="px-6 py-2 rounded-full bg-white text-black font-black text-sm hover:bg-zinc-200 transition-colors shadow-xl">
-                  Dashboard
-                </Link>
-                <button onClick={logout} className="p-2 text-zinc-500 hover:text-white transition-colors">
-                  <LogOut className="w-5 h-5" />
+            <div className="flex items-center gap-6">
+              {!user ? (
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="relative overflow-hidden bg-yellow-500 text-black px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all group shadow-lg shadow-yellow-500/10"
+                >
+                  <span className="relative z-10">Get Started</span>
+                  <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                 </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className="px-6 py-2 rounded-full bg-white text-black font-black text-sm hover:bg-zinc-200 transition-colors shadow-xl"
-              >
-                Sign In
-              </button>
-            )}
+              ) : (
+                <div className="flex items-center gap-4">
+                  <Link href="/dashboard" className="text-[10px] font-black uppercase text-yellow-500 border border-yellow-500/20 px-4 py-2 rounded-lg hover:bg-yellow-500/10 transition-all">Dashboard</Link>
+                  <button onClick={logout} className="text-zinc-500 hover:text-white"><LogOut size={20} /></button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Center-Aligned Cinematic Hero */}
-      <main className="min-h-screen relative flex flex-col items-center justify-center pt-32 text-center z-10 w-full max-w-7xl mx-auto px-6 overflow-hidden">
-        
-        {/* ATMOSPHERIC BACKGROUND: Cinematic Scene */}
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-          <motion.div
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 0.15, scale: 1 }}
-            transition={{ duration: 2, ease: "easeOut" }}
-            className="w-full h-full relative"
-          >
-            <img 
-              src="/confident_professional_speaking_1777667624647.png" 
-              alt="Background Scene" 
-              className="w-full h-full object-cover grayscale"
-            />
-            <div className="absolute inset-0 bg-[#000000]/60" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-transparent to-[#000000]" />
-          </motion.div>
+      {/* --- HERO SECTION --- */}
+      <section className="relative min-h-svh flex flex-col items-center justify-center px-6 pt-20 overflow-hidden">
+        <HeroParticles />
+
+        {/* Animated Background Gradients */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] opacity-10 pointer-events-none">
+          <div className="absolute inset-0 bg-yellow-500 blur-[180px] rounded-full animate-pulse" />
         </div>
 
-
-
+        <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-20">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1 }}
-            className="relative z-10 max-w-4xl"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="transform-gpu will-change-transform"
           >
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tight leading-[0.9] text-white mb-4">
-              Master your <br />
-              <div className="h-[1.1em] overflow-hidden relative">
-                <AnimatePresence mode="wait">
-                  <motion.span 
-                    key={words[currentWordIndex]}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.5, ease: "easeInOut" }}
-                    className="text-[#FFC300] drop-shadow-[0_0_50px_rgba(255,195,0,0.2)] absolute left-0 right-0"
-                  >
-                    {words[currentWordIndex]}
-                  </motion.span>
-                </AnimatePresence>
-              </div>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="h-[1px] w-12 bg-yellow-500" />
+              <span className="text-yellow-500 font-black text-xs uppercase tracking-[0.4em]"></span>
+            </div>
+
+            <h1 className="text-7xl md:text-[110px] font-black leading-[0.85] tracking-tighter mb-10">
+              UNLEASH THE <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-white">DOMINANT</span><br />
+              VOICE.
             </h1>
 
+            <p className="text-zinc-400 text-xl md:text-2xl font-medium max-w-xl mb-12 leading-relaxed">
+              Proprietary neural algorithms that decode your vocal impact.
+              Refine tone, eliminate hesitation, and master any room.
+            </p>
 
-          
-          <p className="text-xl md:text-2xl text-zinc-400 font-medium leading-relaxed mb-12 max-w-2xl mx-auto">
-            The world’s most advanced AI speech coach. <br className="hidden md:block" />
-            Built for those who refuse to be ignored.
-          </p>
+            <div className="flex flex-wrap gap-6">
+              <button onClick={() => setIsAuthModalOpen(true)} className="px-10 py-5 bg-white text-black font-black rounded-2xl flex items-center gap-3 hover:bg-[#00d2ff] hover:scale-105 transition-all shadow-2xl shadow-white/10">
+                ACCESS PLATFORM <MoveRight size={20} />
+              </button>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <button 
-              onClick={() => setIsAuthModalOpen(true)}
-              className="w-full sm:w-auto px-12 py-6 bg-[#FFC300] text-black font-black text-xl rounded-full hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,195,0,0.4)] active:scale-95"
-            >
-              Start Speaking Better
-            </button>
-            <button className="w-full sm:w-auto px-12 py-6 bg-transparent border border-white/20 text-white font-black text-xl rounded-full hover:bg-white/5 transition-all active:scale-95">
-              Learn More
-            </button>
-          </div>
-        </motion.div>
+            </div>
+          </motion.div>
 
-        {/* Dynamic Light Rays */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,195,0,0.05)_0%,transparent_70%)]" />
+          {/* Hero Visual: The "Matrix" */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, rotate: 2 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+            className="relative flex justify-center lg:justify-end transform-gpu will-change-transform"
+          >
+            <div className="relative w-full max-w-[500px] aspect-square">
+              {/* Glass Card 1 */}
+              <div className="absolute top-0 right-0 w-4/5 h-4/5 bg-zinc-900/50 supports-[backdrop-filter]:backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 shadow-2xl transform rotate-3 z-10 translate-z-0">
+                <div className="flex justify-between items-start mb-12">
+                  <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <Volume2 className="text-black" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Confidence Score</div>
+                    <div className="text-3xl font-black text-yellow-500">98.2%</div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {[70, 40, 90].map((w, i) => (
+                    <div key={i} className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }} animate={{ width: `${w}%` }}
+                        transition={{ duration: 2, delay: 1 }}
+                        className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+
+              {/* Background Geometric Decoration */}
+              <div className="absolute inset-0 border-2 border-yellow-500/20 rounded-full animate-[spin_20s_linear_infinity] opacity-20" />
+              <div className="absolute inset-4 border border-dashed border-white/10 rounded-full animate-[spin_30s_linear_infinity_reverse]" />
+            </div>
+          </motion.div>
         </div>
+      </section>
 
-        {/* Film Grain Overlay */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.04] z-[100] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-      </main>
-
-      {/* The 4 Pillars Section */}
-      <section className="w-full max-w-7xl mx-auto px-6 py-32 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 md:gap-8">
-          
-          {[
-            { img: "1.png", title: "Lead the Room", desc: "Take control of the conversation from the first word." },
-            { img: "2.png", title: "Control the Narrative", desc: "Speak with absolute clarity and precision." },
-            { img: "3.png", title: "Become Confident", desc: "Eliminate filler words and natural hesitation." },
-            { img: "4.png", title: "Command Authority", desc: "Leave zero doubt in your audience's mind." }
-          ].map((item, i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-10%" }}
-              transition={{ delay: i * 0.15, type: "spring", stiffness: 100, damping: 20 }}
-              className="flex flex-col items-center text-center group"
-            >
-              <motion.div 
-                whileHover={{ scale: 1.05, y: -10 }}
-                transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                className="w-64 h-64 sm:w-80 sm:h-80 md:w-full md:aspect-square mb-8 relative"
-              >
-                <img 
-                  src={`/${item.img}`} 
-                  alt={item.title} 
-                  className="w-full h-full object-cover rounded-[2rem] shadow-2xl shadow-blue-900/10 border border-white/5" 
-                />
-              </motion.div>
-              <h3 className="text-2xl font-black text-white mb-3">{item.title}</h3>
-              <p className="text-lg text-zinc-400 font-medium max-w-[280px]">{item.desc}</p>
-            </motion.div>
+      {/* --- STATS STRIP --- */}
+      <div className="py-10 bg-white text-black overflow-hidden relative">
+        <motion.div
+          animate={{ x: [0, -1000] }}
+          transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
+          className="flex whitespace-nowrap gap-20 items-center"
+        >
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="flex items-center gap-6">
+              <span className="text-4xl font-black tracking-tighter uppercase italic">Neural Processing</span>
+              <div className="w-3 h-3 bg-black rounded-full" />
+              <span className="text-4xl font-black tracking-tighter uppercase italic">Vocal Mastery</span>
+              <div className="w-3 h-3 bg-black rounded-full" />
+              <span className="text-4xl font-black tracking-tighter uppercase italic">98% Clarity</span>
+              <div className="w-3 h-3 bg-black rounded-full" />
+            </div>
           ))}
+        </motion.div>
+      </div>
 
+      {/* --- FEATURES: BENTO GRID --- */}
+      <section id="ecosystem" className="py-32 px-6 max-w-7xl mx-auto">
+        <div className="text-center mb-20">
+          <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase italic">Built for the <span className="text-yellow-500">Elite.</span></h2>
+          <p className="text-zinc-500 text-xl max-w-2xl mx-auto">We've spent 40,000 hours training our model on the world's most successful speeches.</p>
         </div>
-      </section>
 
-      {/* The Animated Audio Mockup Section */}
-      <section className="w-full px-6 py-24 relative z-10 overflow-hidden">
-        <motion.div 
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8 }}
-          className="max-w-5xl mx-auto bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-[2.5rem] p-8 md:p-16 flex flex-col items-center text-center shadow-2xl relative"
-        >
-          {/* Animated Waveform */}
-          <div className="flex items-end gap-1.5 md:gap-2 h-32 mb-12 w-full justify-center opacity-90 relative overflow-hidden">
-            {bars.map((height, i) => (
-              <motion.div 
-                key={i}
-                animate={{ height: `${height}%` }}
-                transition={{ duration: 0.15, ease: "linear" }}
-                className="w-3 md:w-5 bg-yellow-500 rounded-t-md shadow-[0_0_15px_rgba(234,179,8,0.3)]"
-              />
-            ))}
-            {/* Unique Scanning Laser */}
-            <motion.div 
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-y-0 w-1 bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.8)] z-10"
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
-          <div className="inline-flex items-center gap-2 bg-zinc-800 px-5 py-2.5 rounded-full mb-6 border border-zinc-700">
-            <AudioLines className="w-4 h-4 text-yellow-400" />
-            <span className="text-xs font-black uppercase tracking-widest text-zinc-300">Live AI Analysis</span>
-          </div>
-
-          <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-6">
-            Real-time neural feedback.
-          </h2>
-          <p className="text-xl text-zinc-400 font-medium max-w-2xl">
-            We don't just record audio. We process every syllable, tone, and pause to give you actionable insights the second you stop speaking.
-          </p>
-        </motion.div>
-      </section>
-
-      {/* Out of the Box Bento Grid */}
-      <section id="platform" className="py-32 px-6 max-w-7xl mx-auto relative z-10">
-        <motion.div 
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-24"
-        >
-          <h2 className="text-5xl md:text-7xl font-black tracking-tight text-white mb-6">
-            Everything you need.
-          </h2>
-          <p className="text-xl text-yellow-500 font-black uppercase tracking-widest">Built for speed. Designed for growth.</p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[240px]">
-          {/* Card 1: AI Feedback - Large & Immersive */}
-          <motion.div 
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            whileHover={{ scale: 1.02 }}
-            className="md:col-span-8 md:row-span-2 bg-zinc-900 border border-zinc-800 rounded-[3rem] p-12 flex flex-col justify-between group overflow-hidden relative shadow-2xl will-change-transform"
+          {/* Main Feature */}
+          <motion.div
+            whileHover={{ y: -5 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="md:col-span-7 bg-zinc-900/30 supports-[backdrop-filter]:backdrop-blur-3xl border border-white/5 rounded-[4rem] p-12 overflow-hidden relative group transform-gpu will-change-transform"
           >
             <div className="relative z-10">
-              <div className="w-16 h-16 rounded-2xl bg-yellow-500 flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(234,179,8,0.3)]">
-                <Mic className="w-8 h-8 text-black" />
+              <div className="flex gap-4 items-center mb-10">
+                <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center border border-white/10">
+                  <Cpu className="text-yellow-500" size={32} />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black tracking-tighter">Bio-Metric Vocal ID</h3>
+                  <p className="text-zinc-500 text-sm">Personalized feedback tailored to your DNA.</p>
+                </div>
               </div>
-              <h3 className="text-4xl font-black text-white mb-4">AI-Powered Insights</h3>
-              <p className="text-zinc-400 text-xl max-w-md leading-relaxed">
-                Our AI analyzes your tone, pace, and clarity in real-time, providing actionable feedback to master your delivery.
-              </p>
+              <p className="text-zinc-400 text-xl leading-relaxed mb-8">Our engine identifies your unique pitch baseline and resonance profile, ensuring that coaching feels natural, never robotic.</p>
+              <button className="text-yellow-500 font-bold flex items-center gap-2 group-hover:gap-4 transition-all">
+                LEARN MORE <ArrowRight size={18} />
+              </button>
             </div>
-            {/* Unique Visual Element inside card */}
-            <div className="absolute right-[-10%] bottom-[-10%] w-2/3 h-2/3 bg-zinc-800/50 rounded-full blur-3xl group-hover:bg-yellow-500/10 transition-colors" />
-            <div className="absolute right-10 bottom-10 w-64 h-32 flex items-end gap-1 opacity-20 group-hover:opacity-40 transition-opacity">
-              {[40, 70, 45, 90, 65, 30, 85, 50, 75, 40].map((h, i) => (
-                <motion.div 
-                  key={i}
-                  animate={{ height: [`${h}%`, `${h+10}%`, `${h}%`] }}
-                  transition={{ duration: 1 + i*0.1, repeat: Infinity }}
-                  className="flex-1 bg-yellow-500 rounded-full"
-                />
-              ))}
+            {/* Visual background */}
+            <div className="absolute right-0 bottom-0 opacity-10 group-hover:opacity-30 transition-opacity">
+              <Dna size={400} />
             </div>
           </motion.div>
 
-          {/* Card 2: Privacy - High Gloss Small */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            whileHover={{ y: -10 }}
-            className="md:col-span-4 md:row-span-1 bg-zinc-900/50 backdrop-blur-xl border border-zinc-700 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center group shadow-xl will-change-transform"
+          {/* Side Feature 1 */}
+          <motion.div
+            whileHover={{ y: -5 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="md:col-span-5 bg-yellow-500 rounded-[4rem] p-12 text-black flex flex-col justify-between transform-gpu will-change-transform"
           >
-            <Shield className="w-12 h-12 text-yellow-500 mb-6 group-hover:rotate-12 transition-transform" />
-            <h3 className="text-2xl font-black text-white mb-2">100% Private</h3>
-            <p className="text-zinc-500 font-medium">Your sessions are yours alone.</p>
-          </motion.div>
-
-          {/* Card 3: Growth - Horizontal */}
-          <motion.div 
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            whileHover={{ x: 5 }}
-            className="md:col-span-4 md:row-span-1 bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 flex items-center gap-6 group will-change-transform"
-          >
-            <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 group-hover:bg-yellow-500 transition-colors">
-              <TrendingUp className="w-8 h-8 text-white group-hover:text-black transition-colors" />
+            <div className="flex justify-between items-start">
+              <Fingerprint size={48} strokeWidth={2.5} />
+              <div className="bg-black text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Secure</div>
             </div>
             <div>
-              <h3 className="text-xl font-black text-white">Daily Progress</h3>
-              <p className="text-zinc-500">Track your confidence score daily.</p>
+              <h3 className="text-4xl font-black tracking-tighter mb-4 italic">Unrivaled Privacy.</h3>
+              <p className="font-bold opacity-80 leading-snug">All processing happens in an isolated enclave. Your voice is yours alone. Period.</p>
             </div>
           </motion.div>
 
-          {/* Card 4: Launch - The Anchor */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            whileHover={{ scale: 1.01 }}
-            className="md:col-span-12 md:row-span-1 bg-yellow-500 rounded-[3rem] p-10 flex flex-col md:flex-row items-center justify-between group text-black overflow-hidden relative shadow-2xl"
-          >
-            <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left">
-              <h3 className="text-4xl md:text-5xl font-black mb-4">Ready to start?</h3>
-              <p className="text-yellow-950 text-xl font-medium max-w-xl">
-                No complex setups. No waiting. Just press start and begin transforming your voice today.
-              </p>
-            </div>
-            <button 
-              onClick={() => setIsAuthModalOpen(true)}
-              className="mt-8 md:mt-0 relative z-10 px-12 py-6 bg-black text-white font-black rounded-full hover:scale-105 active:scale-95 transition-all text-xl shadow-2xl"
-            >
-              Launch Platform
-            </button>
-            {/* Unique Background Decoration */}
-            <div className="absolute right-[-5%] top-[-50%] w-64 h-64 bg-black/5 rounded-full blur-3xl pointer-events-none" />
-            <Play className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[40vw] h-[40vw] text-black/5 pointer-events-none" />
-          </motion.div>
+          {/* Small Bento 1 */}
+          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:border-yellow-500/50 transition-colors">
+            <BarChart3 className="text-yellow-500 mb-6" size={32} />
+            <h4 className="text-xl font-black mb-2 uppercase italic">Micro-Analytics</h4>
+            <p className="text-zinc-500 text-sm">Every pause, every breath, every 'um' analyzed to the millisecond.</p>
+          </div>
+
+          {/* Small Bento 2 */}
+          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:border-yellow-500/50 transition-colors">
+            <Layers className="text-yellow-500 mb-6" size={32} />
+            <h4 className="text-xl font-black mb-2 uppercase italic">Multi-Modal</h4>
+            <p className="text-zinc-500 text-sm">Switch between speech, debate, and interview modes instantly.</p>
+          </div>
+
+          {/* Small Bento 3 */}
+          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:border-yellow-500/50 transition-colors">
+            <Sparkles className="text-yellow-500 mb-6" size={32} />
+            <h4 className="text-xl font-black mb-2 uppercase italic">AI Persona</h4>
+            <p className="text-zinc-500 text-sm">Practice against challenging AI personas that simulate real high-stakes environments.</p>
+          </div>
+
         </div>
       </section>
 
-      {/* Clean Footer */}
-      <footer className="w-full pt-16 pb-8 px-8 border-t border-zinc-900 bg-[#0A0A0B] relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center">
-            <img src="/splash.png" alt="REVIAL Logo" className="w-20 h-20 md:w-24 md:h-24 object-contain grayscale opacity-70" />
+      {/* --- SHOWCASE: REAL-TIME FEEDBACK --- */}
+      <section className="py-32 px-6 bg-[#080808]">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-20 items-center">
+          <div className="lg:w-1/2">
+            <h2 className="text-6xl font-black tracking-tighter mb-8 italic">THE ENGINE IN <br /><span className="text-yellow-500">ACTION.</span></h2>
+            <p className="text-zinc-400 text-xl mb-10 leading-relaxed">Stop guessing how you sound. Get the neural heat-map of your influence the moment you speak.</p>
+
+            <div className="space-y-6">
+              {[
+                { label: "Vocal Clarity", val: 94 },
+                { label: "Command Presence", val: 88 },
+                { label: "Emotional Resonance", val: 91 },
+              ].map((stat, i) => (
+                <div key={i} className="p-6 bg-zinc-900/50 supports-[backdrop-filter]:backdrop-blur-lg border border-white/5 rounded-2xl flex items-center justify-between transform-gpu">
+                  <span className="font-bold text-zinc-300 uppercase tracking-widest text-xs">{stat.label}</span>
+                  <div className="flex items-center gap-4">
+                    <div className="w-32 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }} whileInView={{ width: `${stat.val}%` }}
+                        viewport={{ once: true }}
+                        className="h-full bg-yellow-500"
+                      />
+                    </div>
+                    <span className="font-black text-yellow-500">{stat.val}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-8 text-zinc-600 font-black text-sm uppercase tracking-widest">
-            <span className="cursor-not-allowed hover:text-white transition-colors">Privacy</span>
-            <span className="cursor-not-allowed hover:text-white transition-colors">Terms</span>
+
+          <div className="lg:w-1/2 relative">
+            <div className="w-full aspect-video bg-zinc-900 border border-white/10 rounded-[2.5rem] p-4 relative overflow-hidden shadow-2xl">
+              <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
+              {/* Simulated Waveform Visualizer */}
+              <VisualizerMockup />
+              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4">
+                <button className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+                  <Pause fill="black" size={24} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- FOOTER: THE SIGNATURE --- */}
+      <footer className="pt-40 pb-20 px-6 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-20 mb-32">
+            <div className="md:col-span-2">
+              <Image src="/splash.png" alt="Logo" width={180} height={50} className="mb-10 opacity-80" />
+              <p className="text-zinc-500 text-xl max-w-sm mb-10 leading-relaxed">Forging the next generation of global leaders through the power of peak communication.</p>
+              <div className="flex gap-6">
+                <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center border border-white/5 hover:border-yellow-500/50 transition-colors cursor-pointer">
+                  <Globe size={20} />
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center border border-white/5 hover:border-yellow-500/50 transition-colors cursor-pointer">
+                  <Command size={20} />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h5 className="text-yellow-500 font-black uppercase text-[10px] tracking-[0.3em] mb-8">Navigation</h5>
+              <ul className="space-y-4 text-zinc-400 font-bold text-sm">
+                <li className="hover:text-white transition-colors cursor-pointer">Platform</li>
+                <li className="hover:text-white transition-colors cursor-pointer">Intelligence</li>
+                <li className="hover:text-white transition-colors cursor-pointer">Enterprise</li>
+                <li className="hover:text-white transition-colors cursor-pointer">Pricing</li>
+              </ul>
+            </div>
+
+            <div>
+              <h5 className="text-yellow-500 font-black uppercase text-[10px] tracking-[0.3em] mb-8">Legal</h5>
+              <ul className="space-y-4 text-zinc-400 font-bold text-sm">
+                <li className="hover:text-white transition-colors cursor-pointer">Privacy Policy</li>
+                <li className="hover:text-white transition-colors cursor-pointer">Terms of Service</li>
+                <li className="hover:text-white transition-colors cursor-pointer">Security Protocol</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row justify-between items-center pt-10 border-t border-white/5 gap-8">
+            <p className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.5em]">©2026 REVIAL LABS INC.</p>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">System Status: All Engines Nominal</span>
+            </div>
           </div>
         </div>
       </footer>
 
+      {/* High-Impact Global Styles (Tailwind can handle most, but adding for fine-tuning) */}
+      <style jsx global>{`
+        @keyframes subtle-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        body {
+          overscroll-behavior: none;
+        }
+        ::selection {
+          background: #FFD700;
+          color: black;
+        }
+      `}</style>
     </div>
   );
 }

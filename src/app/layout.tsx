@@ -6,6 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AuthProvider } from "@/components/auth-provider";
 import { InstallPrompt } from "@/components/install-prompt";
+import { PageAnimate } from "@/components/page-animate";
 
 import type { Metadata, Viewport } from "next";
 
@@ -35,10 +36,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-full transition-colors duration-300 page-transition-enter`}>
+      <body className={`${inter.className} min-h-full`}>
         <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            {children}
+            <PageAnimate>
+              {children}
+            </PageAnimate>
             <InstallPrompt />
           </AuthProvider>
         </NextThemesProvider>

@@ -54,10 +54,16 @@
     border-color: hsl(var(--border));
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+    box-sizing: border-box;
   }
   
   *::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
@@ -65,41 +71,47 @@
     color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
-    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    will-change: opacity, transform;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  /* Prevent layout shifts during font loading */
+  .font-loaded body {
+    opacity: 1;
   }
 }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(8px); /* Reduced for mobile performance */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  will-change: backdrop-filter;
-}
-
-@media (min-width: 768px) {
-  .glass-card {
-    backdrop-filter: blur(12px);
-  }
+  transform: translateZ(0); /* Safari hardware acceleration */
 }
 
 .light .glass-card {
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+  transform: translateZ(0);
 }
 
 .blue-gradient {
   background: linear-gradient(135deg, #4f6df5 0%, #2b44b8 100%);
+  transform: translateZ(0);
 }
 
 .blue-glow {
   box-shadow: 0 0 20px rgba(79, 109, 245, 0.3);
+  transform: translateZ(0);
 }
 
 .light .blue-glow {
   box-shadow: 0 5px 15px rgba(79, 109, 245, 0.2);
+  transform: translateZ(0);
 }
 
 .animate-pulse-slow {
@@ -119,14 +131,7 @@
 
 @layer components {
   .glass-dock {
-    @apply bg-background/60 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[2.5rem];
+    @apply bg-background/60 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[2.5rem];
+    transform: translateZ(0);
   }
-}
-@keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-.page-transition-enter {
-  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

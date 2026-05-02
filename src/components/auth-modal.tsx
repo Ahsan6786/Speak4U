@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +9,7 @@ import { X, Mail, Lock, LogIn, ArrowRight } from "lucide-react";
 import { useAuth } from "./auth-provider";
 
 export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const { loginWithGoogle, loginWithEmail, signupWithEmail } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +17,21 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,24 +65,27 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 touch-none">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            className="absolute inset-0 bg-black/80 supports-[backdrop-filter]:backdrop-blur-md"
           />
 
           <motion.div
-            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+            initial={{ scale: 0.98, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 10 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="relative w-full max-w-md bg-black border border-zinc-800 rounded-[2.5rem] p-8 md:p-10 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]"
+            exit={{ scale: 0.98, opacity: 0, y: 10 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="relative w-full max-w-md bg-black border border-zinc-800 rounded-[2.5rem] p-8 md:p-10 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] transform-gpu will-change-transform"
           >
             <div className="absolute top-0 right-0 p-6">
               <button onClick={onClose} className="p-2 rounded-full hover:bg-zinc-800 transition-colors">
@@ -146,6 +166,7 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

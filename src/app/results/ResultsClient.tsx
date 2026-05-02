@@ -271,7 +271,7 @@ export default function ResultsClient() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6 md:p-12 selection:bg-primary/30 transition-colors duration-300">
+    <div className="min-h-screen bg-background text-foreground p-6 md:p-12 selection:bg-primary/30">
       <div className="max-w-6xl mx-auto" id="results-content">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-16 print:hidden">
           <div className="flex items-center gap-4">
