@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const { answers, brutalMode } = await req.json();
 
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const systemPrompt = `
       You are an elite vocal coach at REVIAL. The user just completed a 'Rapid Fire' speaking drill consisting of 6 consecutive questions.

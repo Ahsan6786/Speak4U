@@ -415,7 +415,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-20 mb-32">
             <div className="md:col-span-2">
-              <Image src="/splash.png" alt="Logo" width={180} height={50} className="mb-10 opacity-80" />
+              <Image src="/splash.png" alt="Logo" width={220} height={80} className="mb-10 opacity-80 h-16 w-auto" />
               <p className="text-zinc-500 text-xl max-w-sm mb-10 leading-relaxed">Forging the next generation of global leaders through the power of peak communication.</p>
               <div className="flex gap-6">
                 <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center border border-white/5 hover:border-yellow-500/50 transition-colors cursor-pointer">
