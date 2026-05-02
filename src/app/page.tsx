@@ -106,7 +106,7 @@ export default function Home() {
       </nav>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative h-screen flex flex-col items-center justify-center px-6 pt-32 md:pt-40 overflow-hidden">
+      <section className="relative h-screen flex flex-col items-center justify-center px-6 pt-48 md:pt-60 overflow-hidden">
         
         <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-10 md:gap-20">
           <div className=" ">
