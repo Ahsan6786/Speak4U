@@ -1,225 +1,271 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { History, Calendar, Trash2, ArrowRight, LayoutGrid, Flame, Brain, Gauge, Target } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { 
+  ArrowLeft, 
+  History, 
+  Calendar, 
+  ChevronRight, 
+  Sparkles, 
+  Search,
+  LayoutGrid,
+  Trash2
+} from "lucide-react";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/components/auth-provider";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import { collection, query, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+
+import { ThemeToggle } from "@/components/theme-toggle";
+
+interface Session {
+  id: string;
+  prompt: string;
+  transcript: string;
+  timestamp: any;
+  feedback: {
+    confidence_score: number;
+    clarity_score: number;
+    fluency_score: number;
+    tone_score: number;
+    feedback_summary: string;
+  };
+  isRapidFire?: boolean;
+}
 
 export default function ReportsClient() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [streak, setStreak] = useState(0);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      router.push("/");
-      return;
-    }
-
-    const userDocRef = doc(db, "users", user.uid);
-    getDoc(userDocRef).then(doc => {
-      if (doc.exists()) {
-        setStreak(doc.data().streak || 0);
+    const fetchSessions = async () => {
+      if (!user) return;
+      try {
+        const q = query(
+          collection(db, "users", user.uid, "sessions"),
+          orderBy("timestamp", "desc")
+        );
+        const snapshot = await getDocs(q);
+        const fetchedSessions = snapshot.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        })) as Session[];
+        setSessions(fetchedSessions);
+      } catch (err) {
+        console.error("Failed to fetch sessions:", err);
+      } finally {
+        setLoading(false);
       }
-    });
+    };
 
-    const sessionsRef = collection(db, "users", user.uid, "sessions");
-    const q = query(sessionsRef, orderBy("timestamp", "desc"));
-    const unsubHistory = onSnapshot(q, (snapshot) => {
-      setSessions(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-
-    return () => unsubHistory();
+    if (!authLoading) {
+      if (!user) {
+        router.push("/");
+      } else {
+        fetchSessions();
+      }
+    }
   }, [user, authLoading, router]);
 
   const confirmDelete = async () => {
     if (!user || !sessionToDelete) return;
     try {
       await deleteDoc(doc(db, "users", user.uid, "sessions", sessionToDelete));
+      setSessions(prev => prev.filter(s => s.id !== sessionToDelete));
       setSessionToDelete(null);
     } catch (err) {
       console.error("Delete failed:", err);
     }
   };
 
-  const avgConfidence = sessions.length > 0 
-    ? Math.round(sessions.reduce((acc, s) => acc + (s.feedback?.confidence_score || 0), 0) / sessions.length) 
-    : 0;
+  const filteredSessions = sessions.filter(s => 
+    s.prompt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.transcript.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const avgFluency = sessions.length > 0 
-    ? Math.round(sessions.reduce((acc, s) => acc + (s.feedback?.fluency_score || 0), 0) / sessions.length) 
-    : 0;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse">
+            <History className="w-6 h-6 text-primary" />
+          </div>
+          <p className="text-sm font-black uppercase tracking-widest text-primary/50">Loading History...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-background text-foreground p-6 md:p-12 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -mr-64 -mt-64 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] rounded-full -ml-64 -mb-64 pointer-events-none"></div>
+    <div className="min-h-screen bg-background text-foreground p-6 md:p-12 selection:bg-primary/30 relative overflow-hidden">
+      {/* Background Atmosphere */}
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] -ml-64 -mb-64 pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto relative z-10">
-        <div className="flex items-center justify-between mb-12">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-400 text-black hover:bg-yellow-500 transition-all font-black text-xs uppercase tracking-widest shadow-lg shadow-yellow-400/20"
-          >
-            <LayoutGrid className="w-4 h-4" />
-            <span>Menu</span>
-          </Link>
-          <ThemeToggle />
+      {/* Delete Confirmation Modal */}
+      {sessionToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border p-8 rounded-[2rem] shadow-2xl max-w-md w-full text-center">
+            <div className="w-16 h-16 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-6">
+              <Trash2 className="w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-black mb-2">Delete Report?</h3>
+            <p className="text-muted-foreground mb-8">This action cannot be undone. Are you sure you want to permanently delete this practice report?</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setSessionToDelete(null)}
+                className="flex-1 py-4 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-4 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-6xl mx-auto relative z-10">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-10 mb-20">
+          <div className="space-y-6 w-full lg:w-auto">
+            <div className="flex items-center justify-between lg:justify-start gap-4">
+              <Link href="/dashboard" className="inline-flex items-center gap-3 text-muted-foreground hover:text-foreground transition-all group px-4 py-2 rounded-full bg-muted/50 border border-border hover:bg-muted">
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Dashboard</span>
+              </Link>
+              <ThemeToggle />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-5xl md:text-8xl font-black tracking-tighter italic leading-none text-foreground">
+                SPEECH <br /><span className="text-primary">ARCHIVE.</span>
+              </h1>
+              <p className="text-muted-foreground text-lg md:text-xl font-medium italic max-w-lg">
+                Your journey to vocal mastery, preserved in high-fidelity neural audits.
+              </p>
+            </div>
+          </div>
+
+          <div className="relative w-full lg:w-96 group">
+            <div className="absolute inset-0 bg-primary/20 blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors z-20" />
+            <input 
+              type="text"
+              placeholder="Search reports..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-muted/50 border-2 border-border rounded-[2rem] py-6 pl-16 pr-8 outline-none focus:border-primary/50 focus:bg-muted transition-all font-bold text-base relative z-10"
+            />
+          </div>
         </div>
 
-        <div className="mb-16">
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-4 italic">Performance Reports</h1>
-          <p className="text-xl text-muted-foreground font-medium max-w-2xl">
-            Track your journey, analyze your speech patterns, and watch your confidence grow over time.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <StatCard label="Avg Confidence" value={`${avgConfidence}%`} icon={Brain} color="text-emerald-500" bg="bg-emerald-500/10" />
-          <StatCard label="Current Level" value={`Level ${Math.floor(sessions.length / 5) + 1}`} icon={Target} color="text-blue-500" bg="bg-blue-500/10" />
-          <StatCard label="Avg Fluency" value={`${avgFluency}%`} icon={Gauge} color="text-purple-500" bg="bg-purple-500/10" />
-          <StatCard label="Practice Streak" value={`${streak} Days`} icon={Flame} color="text-orange-500" bg="bg-orange-500/10" />
-        </div>
-
-        <div className="space-y-4">
-          <AnimatePresence mode="popLayout">
-            {sessions.length > 0 ? (
-              sessions.map((session, i) => (
-                <motion.div 
-                  key={session.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="glass-card rounded-[2rem] p-5 sm:p-6 border-border/50 hover:border-primary/30 transition-all group"
-                >
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-8">
-                    <div className="flex items-center gap-4 sm:gap-6">
-                      <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex flex-col items-center justify-center text-muted-foreground shrink-0">
-                         <Calendar className="w-3.5 h-3.5 mb-0.5" />
-                         <span className="text-[9px] font-black uppercase">{session.timestamp?.toDate ? new Date(session.timestamp.toDate()).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'Today'}</span>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-primary">Topic</span>
-                          {session.isRapidFire && <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-[8px] font-black uppercase shadow-lg shadow-red-500/20">Rapid Fire</span>}
-                          {session.brutalMode && <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 text-[8px] font-black uppercase">Strict</span>}
-                        </div>
-                        <h4 className="font-bold text-lg italic text-foreground/90 leading-tight line-clamp-1 group-hover:text-foreground transition-colors">
-                          "{session.prompt}"
-                        </h4>
-                      </div>
+        {/* Sessions Grid */}
+        <div className="grid grid-cols-1 gap-6">
+          {filteredSessions.length > 0 ? (
+            filteredSessions.map((session) => (
+              <div
+                key={session.id}
+                onClick={() => {
+                  sessionStorage.setItem("last_transcript", session.transcript);
+                  sessionStorage.setItem("last_prompt", session.prompt);
+                  sessionStorage.setItem("last_result", JSON.stringify({
+                    transcript: session.transcript,
+                    prompt: session.prompt,
+                    data: session.feedback
+                  }));
+                  router.push("/results");
+                }}
+                className="group relative flex flex-col p-8 md:p-10 rounded-[2.5rem] bg-card/30 border-2 border-border hover:border-primary/50 hover:bg-card/50 transition-all duration-300 cursor-pointer backdrop-blur-md overflow-hidden"
+              >
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
+                  <div className="flex-1 space-y-6">
+                    {/* Header: Date & Type */}
+                    <div className="flex items-center gap-4">
+                      <span className="text-[11px] font-black uppercase tracking-[0.3em] text-primary">
+                        {session.timestamp?.toDate().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) || "MAY 3, 2026"}
+                      </span>
+                      {session.isRapidFire && (
+                        <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-500 text-[9px] font-black uppercase tracking-widest border border-red-500/20">
+                          Rapid Fire
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex items-center justify-between md:justify-end gap-4 md:gap-8 pt-4 md:pt-0 border-t md:border-0 border-border/50">
-                      <div className="flex items-center gap-6 sm:gap-10">
-                        <div className="text-left md:text-right">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Confidence</p>
-                          <span className="font-black text-xl sm:text-2xl tracking-tighter text-emerald-500 leading-none">{session.feedback?.confidence_score}%</span>
-                        </div>
-                        <div className="text-left md:text-right">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Fluency</p>
-                          <span className="font-black text-xl sm:text-2xl tracking-tighter text-purple-500 leading-none">{session.feedback?.fluency_score}%</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <button 
-                          onClick={() => setSessionToDelete(session.id)}
-                          className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-red-500/5 text-red-500 border border-red-500/10 hover:bg-red-500 hover:text-white transition-all"
-                        >
-                          <Trash2 className="w-4 h-4 sm:w-5 h-5" />
-                        </button>
-                        <button 
-                          onClick={() => {
-                            sessionStorage.setItem("last_transcript", session.transcript);
-                            sessionStorage.setItem("last_prompt", session.prompt);
-                            sessionStorage.setItem("last_result", JSON.stringify({
-                              transcript: session.transcript,
-                              prompt: session.prompt,
-                              data: session.feedback
-                            }));
-                            router.push("/results");
-                          }}
-                          className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-card border border-border hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
-                        >
-                          <ArrowRight className="w-4 h-4 sm:w-5 h-5" />
-                        </button>
-                      </div>
+                    {/* Prompt & Transcript */}
+                    <div className="space-y-4">
+                      <h3 className="text-xl md:text-2xl font-black tracking-tight leading-tight text-foreground italic">
+                        "{session.prompt}"
+                      </h3>
+                      <p className="text-muted-foreground/80 text-sm md:text-base font-medium italic line-clamp-2 leading-relaxed border-l-2 border-primary/20 pl-6">
+                        {session.transcript}
+                      </p>
                     </div>
                   </div>
-                </motion.div>
-              ))
-            ) : (
-              <div className="text-center py-24 glass-card rounded-[3rem] border-dashed border-2 opacity-50 flex flex-col items-center">
-                <History className="w-12 h-12 mb-4 text-muted-foreground" />
-                <p className="text-xl font-bold">No performance reports found</p>
-                <p className="text-muted-foreground mt-2">Start practicing to see your analytics here.</p>
-                <Link href="/dashboard" className="mt-8 px-8 py-4 rounded-2xl bg-foreground text-background font-black hover:scale-105 transition-all">
-                  Go Practice
-                </Link>
+
+                  {/* Metrics HUD */}
+                  <div className="flex md:flex-col items-center justify-between md:justify-center gap-6 bg-muted/30 p-6 rounded-3xl border border-border min-w-[140px]">
+                    <div className="text-center md:w-full">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Impact</p>
+                      <p className="text-2xl font-black text-foreground leading-none">{session.feedback.confidence_score}%</p>
+                    </div>
+                    <div className="hidden md:block w-full h-[1px] bg-border" />
+                    <div className="text-center md:w-full">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Clarity</p>
+                      <p className="text-2xl font-black text-primary leading-none">{session.feedback.clarity_score}%</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
+                   <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity">
+                     VIEW FULL PERFORMANCE AUDIT <ChevronRight className="w-4 h-4" />
+                   </div>
+                   <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSessionToDelete(session.id);
+                    }}
+                    className="p-3 rounded-xl text-muted-foreground hover:bg-red-500 hover:text-white transition-all border border-transparent hover:border-red-500"
+                    title="Delete Report"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-            )}
-          </AnimatePresence>
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-40 text-center space-y-8 bg-muted/20 rounded-[4rem] border-4 border-dashed border-border">
+              <div className="w-32 h-32 rounded-[3rem] bg-muted flex items-center justify-center text-muted-foreground relative">
+                <History className="w-16 h-16" />
+                <div className="absolute inset-0 blur-3xl bg-primary/10 rounded-full" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-3xl md:text-4xl font-black italic tracking-tighter text-foreground">THE ARCHIVE IS SILENT.</h3>
+                <p className="text-muted-foreground text-lg font-medium italic max-w-sm mx-auto">
+                  Your journey to vocal mastery begins with your first recording.
+                </p>
+              </div>
+              <button 
+                onClick={() => router.push("/dashboard")}
+                className="px-12 py-6 rounded-2xl bg-foreground text-background font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl"
+              >
+                INITIATE PRACTICE
+              </button>
+            </div>
+          )}
         </div>
-      </div>
-
-      <AnimatePresence>
-        {sessionToDelete && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-card border-2 border-border p-10 rounded-[3rem] shadow-2xl max-w-md w-full text-center"
-            >
-              <div className="w-20 h-20 rounded-3xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-8">
-                <Trash2 className="w-10 h-10" />
-              </div>
-              <h3 className="text-3xl font-black mb-4 tracking-tight">Delete Report?</h3>
-              <p className="text-muted-foreground mb-10 text-lg">This analysis will be permanently removed. You cannot undo this action.</p>
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => setSessionToDelete(null)}
-                  className="flex-1 py-5 rounded-2xl font-black text-lg bg-muted text-foreground hover:bg-muted/80 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={confirmDelete}
-                  className="flex-1 py-5 rounded-2xl font-black text-lg bg-red-500 text-white hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
-                >
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </main>
-  );
-}
-
-function StatCard({ label, value, icon: Icon, color, bg }: { label: string, value: string, icon: any, color: string, bg: string }) {
-  return (
-    <div className="glass-card p-8 rounded-[2.5rem] border-border/50 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", bg, color)}>
-        <Icon className="w-6 h-6" />
-      </div>
-      <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">{label}</p>
-        <p className="text-3xl font-black tracking-tight">{value}</p>
       </div>
     </div>
   );

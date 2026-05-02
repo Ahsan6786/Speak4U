@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -45,15 +45,15 @@ export function InstallPrompt() {
   };
 
   return (
-    <AnimatePresence>
+    <>
       {showPrompt && deferredPrompt && (
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
+        <div
+          
+          
+          
           className="fixed bottom-6 left-6 right-6 md:left-auto md:right-12 md:max-w-md z-[100]"
         >
-          <div className="glass-card p-6 rounded-[2rem] border-primary/20 shadow-2xl flex items-center gap-6 relative overflow-hidden bg-card/80 backdrop-blur-2xl">
+          <div className="glass-card p-6 rounded-[2rem] border-primary/20 shadow-2xl flex items-center gap-6 relative overflow-hidden bg-card/80 ">
             <div className="absolute top-0 right-0 p-4">
               <button 
                 onClick={closePrompt}
@@ -79,8 +79,8 @@ export function InstallPrompt() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

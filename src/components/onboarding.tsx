@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { ChevronRight, Sparkles, Mic, User, Target, Rocket } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, setDoc } from "firebase/firestore";
@@ -77,23 +77,23 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
   return (
     <div className={cn("fixed inset-0 z-[200] flex items-center justify-center overflow-hidden transition-colors duration-1000", step.bgColor)}>
       <div className="relative w-full max-w-4xl px-8">
-        <AnimatePresence mode="wait">
-          <motion.div
+        <>
+          <div
             key={currentStep}
-            initial={{ opacity: 0, x: 50, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -50, scale: 0.95 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            
+            
+            
+            
             className="flex flex-col items-center text-center"
           >
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="w-20 h-20 rounded-3xl flex items-center justify-center bg-white/20 backdrop-blur-md text-white shadow-2xl mb-12"
+            <div 
+              
+              
+              
+              className="w-20 h-20 rounded-3xl flex items-center justify-center bg-white/20  text-white shadow-2xl mb-12"
             >
               {step.icon}
-            </motion.div>
+            </div>
 
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-8 leading-[1.1] max-w-3xl italic text-white">
               {step.title.replace("{name}", name)}
@@ -104,10 +104,10 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
             </p>
 
             {step.isInput && (
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
+              <div 
+                
+                
+                
                 className="w-full max-w-md mb-16"
               >
                 <input
@@ -118,22 +118,22 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
                   autoFocus
                   className="w-full bg-white/10 border-b-2 border-white/30 focus:border-white px-4 py-6 text-3xl font-bold text-center outline-none transition-all placeholder:text-white/30 text-white"
                 />
-              </motion.div>
+              </div>
             )}
 
-            <motion.button
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.6 }}
+            <button
+              
+              
+              
               onClick={handleNext}
               disabled={isFinishing || (step.id === "name" && !name.trim())}
               className="group flex items-center gap-4 bg-white text-black px-10 py-5 rounded-[2rem] font-black text-xl hover:scale-105 transition-transform disabled:opacity-50 shadow-2xl shadow-black/10"
             >
               {currentStep === STEPS.length - 1 ? "START NOW" : "NEXT"}
               <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-          </motion.div>
-        </AnimatePresence>
+            </button>
+          </div>
+        </>
       </div>
 
       {/* Progress Indicator */}

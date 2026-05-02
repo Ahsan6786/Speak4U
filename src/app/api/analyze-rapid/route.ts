@@ -7,8 +7,7 @@ export async function POST(req: Request) {
   try {
     const { answers, brutalMode } = await req.json();
 
-    console.log("Starting rapid analysis with gemini-1.5-flash...");
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const systemPrompt = `
       You are an elite vocal coach at REVIAL. The user just completed a 'Rapid Fire' speaking drill consisting of 6 consecutive questions.
@@ -39,22 +38,13 @@ export async function POST(req: Request) {
       }
     `;
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
-    });
+    const result = await model.generateContent(systemPrompt);
     const text = result.response.text();
     const cleaned = text.replace(/```json|```/g, "").trim();
     
     return NextResponse.json(JSON.parse(cleaned));
   } catch (error: any) {
     console.error("Rapid analysis failed:", error);
-    return NextResponse.json({ 
-      error: "Failed to analyze rapid fire",
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    }, { status: 500 });
+    return NextResponse.json({ error: "Failed to analyze rapid fire" }, { status: 500 });
   }
 }

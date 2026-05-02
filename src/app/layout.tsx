@@ -1,12 +1,13 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 
+
 const inter = Inter({ subsets: ["latin"] });
 
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AuthProvider } from "@/components/auth-provider";
 import { InstallPrompt } from "@/components/install-prompt";
-import { PageAnimate } from "@/components/page-animate";
+
 
 import type { Metadata, Viewport } from "next";
 
@@ -35,13 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full" data-scroll-behavior="smooth" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-full`}>
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body className={`${inter.className} min-h-full overflow-x-hidden`}>
         <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            <PageAnimate>
-              {children}
-            </PageAnimate>
+            {children}
             <InstallPrompt />
           </AuthProvider>
         </NextThemesProvider>
@@ -49,3 +48,4 @@ export default function RootLayout({
     </html>
   );
 }
+

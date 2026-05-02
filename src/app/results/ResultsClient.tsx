@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { 
   CheckCircle2, 
   XCircle, 
@@ -63,6 +63,7 @@ export default function ResultsClient() {
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<FeedbackData | null>(null);
   const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [brutalMode, setBrutalMode] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState<string | null>(null);
@@ -154,9 +155,11 @@ export default function ResultsClient() {
         }
       }
 
+      if (hasFetched.current) return;
+      hasFetched.current = true;
       setLoading(true);
       try {
-        const endpoint = isRapidFire ? "/api/rapid-analyze" : "/api/deep-analyze";
+        const endpoint = isRapidFire ? "/api/analyze-rapid" : "/api/analyze";
         const body = isRapidFire 
           ? { answers: rapidFireData, brutalMode }
           : { transcript, prompt, brutalMode };
@@ -243,28 +246,18 @@ export default function ResultsClient() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground">
         <div className="relative">
-          <motion.div 
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-            className="w-32 h-32 rounded-[2.5rem] border-2 border-primary/20 flex items-center justify-center"
-          >
+          <div className="w-32 h-32 rounded-[2.5rem] border-2 border-primary/20 flex items-center justify-center">
             <div className="w-16 h-16 rounded-2xl blue-gradient blue-glow flex items-center justify-center">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
-          </motion.div>
+          </div>
         </div>
         <div className="mt-12 h-8 flex flex-col items-center justify-center">
-          <AnimatePresence mode="wait">
-            <motion.h2 
-              key={phraseIndex}
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -10, opacity: 0 }}
-              className="text-2xl font-bold tracking-tight text-center"
-            >
+          <>
+            <div className="text-2xl font-bold tracking-tight text-center">
               {LOADING_PHRASES[phraseIndex]}
-            </motion.h2>
-          </AnimatePresence>
+            </div>
+          </>
         </div>
       </div>
     );
@@ -293,7 +286,7 @@ export default function ResultsClient() {
           
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <div className="flex items-center gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border backdrop-blur-xl">
+            <div className="flex items-center gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border ">
                <button 
                 onClick={() => setBrutalMode(false)}
                 className={cn(
@@ -323,10 +316,10 @@ export default function ResultsClient() {
           <ScoreCircle label="Tone" score={data?.tone_score || 0} color="text-yellow-500" delay={0.4} />
         </div>
 
-        <motion.section 
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.35 }}
+        <div 
+          
+          
+          
           className="mb-16"
         >
           <div className="glass-card rounded-[3rem] p-10 md:p-14 border-border/50 bg-muted/20 relative overflow-hidden group">
@@ -348,20 +341,20 @@ export default function ResultsClient() {
               }
             </p>
           </div>
-        </motion.section>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-8 space-y-10">
             {/* OVERALL FEEDBACK */}
-            <motion.section 
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4 }}
+            <div 
+              
+              
+              
               className="relative group"
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 via-purple-500/10 to-blue-500/10 rounded-[3rem] blur-xl opacity-0 group-hover:opacity-100 transition duration-1000" />
               <div className="relative glass-card rounded-[3rem] p-8 md:p-10 border border-white/5 overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] -mr-32 -mt-32" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5  -mr-32 -mt-32" />
                 
                 <div className="flex items-center gap-4 mb-8">
                   <div className="w-14 h-14 rounded-[1.2rem] bg-primary/10 flex items-center justify-center text-primary shadow-inner">
@@ -383,14 +376,14 @@ export default function ResultsClient() {
                   <StatItem label="Speed" value={data?.pace_feedback || "Normal"} icon={<Gauge className="w-5 h-5" />} />
                 </div>
               </div>
-            </motion.section>
+            </div>
 
             {/* RAPID FIRE BREAKDOWN */}
             {typeof window !== 'undefined' && sessionStorage.getItem("is_rapid_fire") === "true" && data?.per_answer_summaries && (
-              <motion.section 
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5 }}
+              <div 
+                
+                
+                
                 className="space-y-12"
               >
                 <div className="flex items-center justify-between px-4 border-l-4 border-yellow-500 py-3 bg-yellow-500/5 rounded-r-2xl">
@@ -403,11 +396,10 @@ export default function ResultsClient() {
 
                 <div className="space-y-12">
                   {JSON.parse(sessionStorage.getItem("rapid_fire_data") || "[]").map((round: any, i: number) => (
-                    <motion.div 
-                      key={i}
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.1 * i }}
+                    <div key={i} 
+                      
+                      
+                      
                       className="group bg-card border-2 border-yellow-500/20 rounded-[3rem] overflow-hidden shadow-xl shadow-yellow-500/5 dark:shadow-black/20"
                     >
                       {/* Header */}
@@ -460,21 +452,21 @@ export default function ResultsClient() {
                           </div>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
-              </motion.section>
+              </div>
             )}
 
             {/* REFINED VERSION */}
-            <motion.section 
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.6 }}
+            <div 
+              
+              
+              
               className="group relative"
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-primary/20 to-purple-500/20 rounded-[3rem] blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000" />
-              <div className="relative glass-card rounded-[3rem] p-12 md:p-16 border-l-8 border-l-primary bg-card/40 backdrop-blur-3xl overflow-hidden">
+              <div className="relative bg-card/80 border-l-8 border-l-primary rounded-[3rem] p-12 md:p-16 overflow-hidden shadow-2xl ">
                 <div className="flex items-center justify-between mb-12">
                    <div className="flex items-center gap-3">
                     <Sparkles className="w-5 h-5 text-primary" />
@@ -485,7 +477,7 @@ export default function ResultsClient() {
                   "{data?.better_version}"
                 </p>
               </div>
-            </motion.section>
+            </div>
           </div>
 
           <div className="lg:col-span-4 space-y-6">
@@ -514,20 +506,20 @@ export default function ResultsClient() {
               textClass="text-white/90"
             />
             
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.9 }}
+            <div 
+              
+              
+              
               className="pt-4"
             >
               <button 
                 onClick={() => router.push("/dashboard?action=new")}
-                className="w-full h-24 rounded-[2rem] bg-foreground text-background font-black text-2xl hover:scale-[1.03] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-4"
+                className="w-full h-24 rounded-[2rem] bg-white text-black font-black text-2xl hover:scale-[1.03] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-4"
               >
                 NEXT LESSON
                 <ChevronRight className="w-8 h-8" />
               </button>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
@@ -537,30 +529,37 @@ export default function ResultsClient() {
 
 function ScoreCircle({ label, score, color, delay }: { label: string, score: number, color: string, delay: number }) {
   return (
-    <motion.div 
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay, duration: 0.8, type: "spring" }}
+    <div 
       className="flex flex-col items-center justify-center text-center py-4"
     >
-      <div className="relative w-20 h-20 md:w-32 md:h-32 mb-4">
-        <div className={cn("absolute inset-0 blur-2xl opacity-20 rounded-full", color.replace("text-", "bg-"))} />
+      <div className="relative w-24 h-24 md:w-40 md:h-40 mb-4 group">
+        {/* Intense Ambient Glow */}
+        <div className={cn("absolute inset-0 blur-3xl opacity-30 rounded-full transition-all duration-700 group-hover:opacity-50", color.replace("text-", "bg-"))} />
+        
         <svg className="w-full h-full transform -rotate-90 relative z-10">
-          <circle cx="50%" cy="50%" r="42%" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/5" />
-          <motion.circle
-            cx="50%" cy="50%" r="42%" stroke="currentColor" strokeWidth="6" strokeLinecap="round" fill="transparent"
-            strokeDasharray={314} initial={{ strokeDashoffset: 314 }}
-            animate={{ strokeDashoffset: 314 - (314 * score) / 100 }}
-            transition={{ delay: delay + 0.5, duration: 2, ease: "circOut" }}
-            className={cn(color, "drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]")}
+          {/* Background Ring */}
+          <circle 
+            cx="50%" cy="50%" r="38%" 
+            stroke="currentColor" strokeWidth="10" 
+            fill="transparent" className="text-white/5" 
+          />
+          {/* Progress Ring */}
+          <circle
+            cx="50%" cy="50%" r="38%" 
+            stroke="currentColor" strokeWidth="10" 
+            strokeLinecap="round" fill="transparent"
+            strokeDasharray={240} 
+            strokeDashoffset={240 - (240 * score) / 100}
+            className={cn(color, "drop-shadow-[0_0_12px_rgba(255,255,255,0.4)] transition-all duration-1000 ease-out")}
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center z-20">
-          <span className="text-lg md:text-2xl font-black">{score}%</span>
+        
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
+          <span className="text-2xl md:text-4xl font-black tracking-tighter">{score}%</span>
         </div>
       </div>
-      <span className="text-[10px] md:text-xs font-black tracking-[0.2em] uppercase text-muted-foreground opacity-70">{label}</span>
-    </motion.div>
+      <span className="text-[10px] md:text-sm font-black tracking-[0.3em] uppercase text-white/50">{label}</span>
+    </div>
   );
 }
 
@@ -578,11 +577,11 @@ function StatItem({ label, value, icon }: { label: string, value: string | numbe
 
 function InfoCard({ title, items, icon, delay, className, textClass }: { title: string, items: string[], icon: React.ReactNode, delay: number, className?: string, textClass?: string }) {
   return (
-    <motion.div 
-      initial={{ x: 20, opacity: 0 }} 
-      animate={{ x: 0, opacity: 1 }} 
-      transition={{ delay }} 
-      className={cn("p-6 rounded-[2rem] border-b-4 backdrop-blur-xl shadow-xl", className)}
+    <div 
+       
+       
+       
+      className={cn("p-6 rounded-[2rem] border-b-4 bg-card/60 shadow-xl", className)}
     >
       <div className="flex items-center gap-3 mb-4">
         {icon}
@@ -596,6 +595,6 @@ function InfoCard({ title, items, icon, delay, className, textClass }: { title: 
           </li>
         ))}
       </ul>
-    </motion.div>
+    </div>
   );
 }

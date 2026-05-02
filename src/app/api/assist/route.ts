@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ suggestions: ["Start speaking to get suggestions..."] });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const systemPrompt = `
       You are an expert vocal coach and debate mentor. 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { X, Mail, Lock, LogIn, ArrowRight } from "lucide-react";
 import { useAuth } from "./auth-provider";
 
@@ -68,23 +68,23 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   if (!mounted) return null;
 
   return createPortal(
-    <AnimatePresence>
+    <>
       {isOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 touch-none">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+          <div
+            
+            
+            
+            
             onClick={onClose}
-            className="absolute inset-0 bg-black/80 supports-[backdrop-filter]:backdrop-blur-md"
+            className="absolute inset-0 bg-black/80 supports-[backdrop-filter]:"
           />
 
-          <motion.div
-            initial={{ scale: 0.98, opacity: 0, y: 10 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.98, opacity: 0, y: 10 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+          <div
+            
+            
+            
+            
             className="relative w-full max-w-md bg-black border border-zinc-800 rounded-[2.5rem] p-8 md:p-10 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] transform-gpu will-change-transform"
           >
             <div className="absolute top-0 right-0 p-6">
@@ -163,10 +163,10 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 {isLogin ? "Sign Up" : "Sign In"}
               </button>
             </p>
-          </motion.div>
+          </div>
         </div>
       )}
-    </AnimatePresence>,
+    </>,
     document.body
   );
 }

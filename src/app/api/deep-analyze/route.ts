@@ -1,83 +1,67 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY is missing");
+}
+
+const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function POST(req: Request) {
   try {
     const { transcript, prompt, brutalMode } = await req.json();
 
     if (!transcript) {
-      return NextResponse.json(
-        { error: "No transcript provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No transcript provided" }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro-latest",
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const modeText = brutalMode
-      ? "Be brutally honest. Point out every mistake."
-      : "Be a strict but helpful speaking coach.";
+    const modeText = brutalMode ? "MODE: BRUTAL. Point out every hesitation." : "MODE: ELITE COACH. Be strict.";
 
     const systemPrompt = `
-${modeText}
+      You are an elite coach. 
+      ${modeText}
+      Transcript: "${transcript}"
+      Prompt: "${prompt}"
+      Return ONLY valid JSON:
+      {
+        "confidence_score": 0,
+        "clarity_score": 0,
+        "fluency_score": 0,
+        "tone_score": 0,
+        "feedback_summary": "",
+        "mistakes": [],
+        "improvement_tips": [],
+        "better_version": "",
+        "tone_analysis": "",
+        "filler_words_detected": 0,
+        "pace_feedback": "",
+        "vocab_words": []
+      }
+    `;
 
-Analyze this speech:
-"${transcript}"
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
 
-Goal:
-"${prompt}"
-
-Return ONLY valid JSON. No markdown. No conversational filler.
-
-{
-  "confidence_score": number,
-  "clarity_score": number,
-  "fluency_score": number,
-  "tone_score": number,
-  "feedback_summary": string,
-  "mistakes": string[],
-  "improvement_tips": string[],
-  "better_version": string,
-  "tone_analysis": string,
-  "filler_words_detected": number,
-  "pace_feedback": string,
-  "vocab_words": [{"word": string, "meaning": string}]
-}
-`;
-
-    const result = await model.generateContent(systemPrompt);
-    const raw = result.response.text();
-
-    const cleaned = raw
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (e) {
-      console.error("RAW AI RESPONSE:", raw);
-      return NextResponse.json(
-        { error: "Invalid AI JSON", raw: raw },
-        { status: 500 }
-      );
+    if (!result?.response) {
+      throw new Error("No response from Gemini");
     }
 
-    return NextResponse.json(parsed);
+    const text = result.response.text();
+    const feedback = JSON.parse(text);
 
+    return NextResponse.json(feedback);
   } catch (error: any) {
     console.error("API ERROR:", error);
-    return NextResponse.json(
-      {
-        error: "Deep analyze failed",
-        message: error.message,
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      error: "Failed to analyze speech",
+      message: error.message
+    }, { status: 500 });
   }
 }

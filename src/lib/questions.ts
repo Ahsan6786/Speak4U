@@ -2,7 +2,7 @@ export const QUESTIONS = {
   beginner: [
     "What is your absolute favorite food, and can you describe the first time you tasted it or a special memory you have eating it?",
     "If you could change one thing about your daily routine to make your day more exciting, what would it be and why?",
-    "Tell me about the last movie you watched that made you feel a strong emotion. What happened in the story?",
+    "Tell me about the last movie you watched that made you feel a strong ediv What happened in the story?",
     "Think about your best friend. What is one personality trait they have that you wish you also had yourself?",
     "If you had a completely free Saturday with no responsibilities, how would you spend every hour of that day?",
     "Describe your favorite room in your house in detail. What makes it feel comfortable or special to you?",

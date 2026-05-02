@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2, Command, Settings, User } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 import { useAuth } from "@/components/auth-provider";
 import { db } from "@/lib/firebase";
-import { doc, setDoc, onSnapshot, collection, query, orderBy, limit, deleteDoc } from "firebase/firestore";
+import { doc, setDoc, onSnapshot, collection, query, orderBy, limit, deleteDoc, increment } from "firebase/firestore";
 
 export default function DashboardClient() {
   const router = useRouter();
@@ -120,8 +120,8 @@ export default function DashboardClient() {
           yesterday.setDate(yesterday.getDate() - 1);
           const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-          if (lastDate !== yesterdayStr && lastDate !== todayStr) {
-            // Missed a day or first time
+          if (lastDate && lastDate !== yesterdayStr && lastDate !== todayStr) {
+            // Missed a day (lastActivity exists but is not yesterday or today)
             if (data.streak !== 0) {
               await setDoc(userDocRef, { streak: 0 }, { merge: true });
             }
@@ -284,7 +284,7 @@ export default function DashboardClient() {
             const lastActivity = sessionStorage.getItem("last_update_date");
             if (lastActivity !== todayStr) {
               await setDoc(userDocRef, {
-                streak: streak + 1,
+                streak: increment(1),
                 lastActivityDate: todayStr
               }, { merge: true });
               sessionStorage.setItem("last_update_date", todayStr);
@@ -301,9 +301,10 @@ export default function DashboardClient() {
           const todayStr = new Date().toISOString().split("T")[0];
           const userDocRef = doc(db, "users", user.uid);
           await setDoc(userDocRef, {
-            streak: streak + 1,
+            streak: increment(1),
             lastActivityDate: todayStr
           }, { merge: true });
+          sessionStorage.setItem("last_update_date", todayStr);
         }
         fetchNewQuestion(true);
         router.push("/results");
@@ -332,13 +333,13 @@ export default function DashboardClient() {
         {/* Cinematic Background */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] bg-red-600/5 blur-[120px] rounded-full animate-pulse" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] bg-red-600/5  rounded-full animate-pulse" />
         </div>
 
         {/* Top: Progress */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div
+          
+          
           className="w-full max-w-5xl flex items-center justify-between relative z-10"
         >
           <div className="flex items-center gap-6">
@@ -355,8 +356,7 @@ export default function DashboardClient() {
 
           <div className="hidden sm:flex gap-2">
             {[1, 2, 3, 4, 5, 6].map(s => (
-              <div
-                key={s}
+              <div key={s}
                 className={cn(
                   "h-1.5 w-10 rounded-full transition-all duration-700",
                   s < rapidFireStep ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.6)]" :
@@ -365,17 +365,12 @@ export default function DashboardClient() {
               />
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Center: Question */}
         <div className="w-full max-w-4xl text-center flex flex-col items-center justify-center relative z-10">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={prompt}
-              initial={{ opacity: 0, scale: 0.95, filter: "blur(20px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 1.05, filter: "blur(20px)" }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          <>
+            <div
               className="space-y-8 md:space-y-12 w-full"
             >
               <h2 className="text-2xl md:text-7xl font-black leading-[1.1] tracking-tight italic bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 px-4">
@@ -405,14 +400,14 @@ export default function DashboardClient() {
                   )}
                 </div>
               )}
-            </motion.div>
-          </AnimatePresence>
+            </div>
+          </>
         </div>
 
         {/* Bottom: Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div
+          
+          
           className="w-full max-w-4xl flex flex-col items-center justify-center gap-8 relative z-10"
         >
           {!isRecording && !isAnalyzing ? (
@@ -443,7 +438,7 @@ export default function DashboardClient() {
               </div>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -452,9 +447,9 @@ export default function DashboardClient() {
   if (view === "practice" && rapidFireStep === 7) {
     return (
       <div className="fixed inset-0 z-[300] bg-[#000000] text-white flex flex-col items-center justify-center p-8 text-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+        <div
+          
+          
           className="flex flex-col items-center"
         >
           <div className="w-24 h-24 rounded-3xl bg-red-500 flex items-center justify-center mb-10 shadow-[0_0_50px_rgba(239,68,68,0.5)]">
@@ -471,21 +466,21 @@ export default function DashboardClient() {
             SEE YOUR RESULTS
             <ChevronRight className="w-10 h-10 group-hover:translate-x-2 transition-transform" />
           </button>
-        </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6 md:p-12 overflow-hidden selection:bg-primary/30 relative">
-      <AnimatePresence>
+      <>
         {sessionToDelete && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+          <div
+            
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80  p-4"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+            <div
+              
               className="bg-card border border-border p-8 rounded-[2rem] shadow-2xl max-w-md w-full text-center"
             >
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-6">
@@ -507,108 +502,102 @@ export default function DashboardClient() {
                   Delete
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showSignOutConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-card border border-border p-8 rounded-[2rem] shadow-2xl max-w-md w-full text-center"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mx-auto mb-6">
-                <LogOut className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-black mb-2">Sign Out?</h3>
-              <p className="text-muted-foreground mb-8">Are you sure you want to sign out of your account?</p>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowSignOutConfirm(false)}
-                  className="flex-1 py-4 rounded-xl font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    logout();
-                    router.push("/");
-                  }}
-                  className="flex-1 py-4 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
-                >
-                  Sign Out
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showSettings && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/40 backdrop-blur-md p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }} 
-              animate={{ scale: 1, opacity: 1, y: 0 }} 
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-card/80 border border-white/10 p-10 rounded-[3rem] shadow-[0_32px_64px_rgba(0,0,0,0.4)] max-w-md w-full relative overflow-hidden transform-gpu will-change-transform"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] -mr-16 -mt-16" />
-              
-              <div className="relative z-10 flex flex-col items-center text-center">
-                <div className="w-20 h-20 rounded-[1.5rem] bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-6 shadow-inner">
-                  <User className="w-10 h-10" />
-                </div>
-                
-                <h3 className="text-3xl font-black tracking-tight mb-2">Profile Settings</h3>
-                <p className="text-muted-foreground text-sm font-medium italic mb-10">Update your details for the dashboard.</p>
-                
-                <div className="w-full space-y-6 mb-10 text-left">
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mb-3 block px-1">Display Name</label>
-                    <input
-                      type="text"
-                      value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 px-6 py-4 rounded-2xl font-bold text-foreground outline-none focus:border-primary/50 focus:bg-white/[0.08] transition-all placeholder:opacity-30"
-                      placeholder="e.g. Ahsan"
-                    />
+      </>
+      <>
+      {/* Sign Out Confirmation Modal */}
+      {showSignOutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-zinc-950 border-2 border-border p-10 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.5)] max-w-md w-full text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-primary" />
+            <div className="w-20 h-20 rounded-3xl bg-blue-500/10 text-blue-500 flex items-center justify-center mx-auto mb-8 shadow-inner">
+              <LogOut className="w-10 h-10" />
+            </div>
+            <h3 className="text-3xl font-black mb-3 tracking-tight italic">SIGN OUT?</h3>
+            <p className="text-muted-foreground font-medium mb-10 italic">Your progress is safely stored. Are you sure you want to end your current session?</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowSignOutConfirm(false)}
+                className="flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest bg-muted text-foreground hover:bg-muted/80 transition-all border border-border"
+              >
+                STAY HERE
+              </button>
+              <button
+                onClick={() => {
+                  logout();
+                  router.push("/");
+                }}
+                className="flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"
+              >
+                EXIT NOW
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-zinc-950 border-2 border-border p-10 rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.5)] max-w-lg w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-primary" />
+            
+            <div className="flex items-center gap-6 mb-10">
+               <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 flex items-center justify-center flex-shrink-0">
+                 <User className="w-8 h-8" />
+               </div>
+               <div>
+                 <h3 className="text-3xl font-black tracking-tight italic leading-none">PROFILE</h3>
+                 <p className="text-muted-foreground text-sm font-medium mt-1 uppercase tracking-widest opacity-60">Management Console</p>
+               </div>
+            </div>
+
+            <div className="space-y-8 mb-12">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4 block">Identity Label</label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    className="w-full bg-muted/50 border-2 border-border px-8 py-5 rounded-[1.5rem] font-black text-xl text-foreground outline-none focus:border-primary focus:bg-muted transition-all shadow-inner"
+                    placeholder="Enter your name"
+                  />
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 text-primary opacity-0 group-focus-within:opacity-100 transition-opacity">
+                    <CheckCircle2 className="w-6 h-6" />
                   </div>
                 </div>
-                
-                <div className="flex gap-4 w-full">
-                  <button
-                    onClick={() => setShowSettings(false)}
-                    className="flex-1 py-4 rounded-2xl font-bold bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (user) {
-                        await setDoc(doc(db, "users", user.uid), { name: newUserName }, { merge: true });
-                        setShowSettings(false);
-                      }
-                    }}
-                    className="flex-1 py-4 rounded-2xl font-black bg-primary text-white hover:scale-[1.03] active:scale-95 transition-all shadow-lg shadow-primary/30"
-                  >
-                    Save
-                  </button>
-                </div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
 
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[150px] rounded-full -mr-64 -mt-64 pointer-events-none opacity-50"></div>
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/5 blur-[150px] rounded-full -ml-64 -mb-64 pointer-events-none opacity-50"></div>
+            <div className="flex gap-4 pt-4">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest bg-muted text-foreground hover:bg-muted/80 transition-all border border-border"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={async () => {
+                  if (user) {
+                    await setDoc(doc(db, "users", user.uid), { name: newUserName }, { merge: true });
+                    setShowSettings(false);
+                  }
+                }}
+                className="flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest bg-primary text-white hover:bg-primary/90 transition-all shadow-xl shadow-primary/30"
+              >
+                SAVE AUDIT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </>
+
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10  rounded-full -mr-64 -mt-64 pointer-events-none opacity-50"></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/5  rounded-full -ml-64 -mb-64 pointer-events-none opacity-50"></div>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.03)_0%,transparent_70%)] pointer-events-none"></div>
 
       <div className="max-w-4xl mx-auto relative z-10">
@@ -616,7 +605,7 @@ export default function DashboardClient() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => view === "practice" ? setView("history") : router.push("/")}
-              className="w-12 h-12 rounded-2xl bg-card border-2 border-border flex items-center justify-center text-foreground hover:bg-primary hover:text-white hover:border-primary transition-all hover:scale-105 shadow-sm"
+              className="w-12 h-12 rounded-2xl bg-emerald-500 border-2 border-emerald-600 flex items-center justify-center text-white hover:bg-emerald-600 transition-all hover:scale-105 shadow-lg shadow-emerald-500/20"
               title="Menu"
             >
               <LayoutGrid className="w-5 h-5" />
@@ -624,14 +613,14 @@ export default function DashboardClient() {
             <ThemeToggle />
             <button
               onClick={() => setShowSettings(true)}
-              className="w-12 h-12 rounded-2xl bg-card border-2 border-border flex items-center justify-center text-foreground hover:text-primary hover:bg-primary/10 hover:border-primary/20 transition-all hover:scale-105 shadow-sm"
+              className="w-12 h-12 rounded-2xl bg-yellow-500 border-2 border-yellow-600 flex items-center justify-center text-black hover:bg-yellow-600 transition-all hover:scale-105 shadow-lg shadow-yellow-500/20"
               title="Settings"
             >
-              <Command className="w-5 h-5" />
+              <Settings className="w-5 h-5" />
             </button>
             <button
               onClick={() => setShowSignOutConfirm(true)}
-              className="w-12 h-12 rounded-2xl bg-card border-2 border-border flex items-center justify-center text-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all hover:scale-105 shadow-sm"
+              className="w-12 h-12 rounded-2xl bg-blue-500 border-2 border-blue-600 flex items-center justify-center text-white hover:bg-blue-600 transition-all hover:scale-105 shadow-lg shadow-blue-500/20"
               title="Sign Out"
             >
               <LogOut className="w-5 h-5" />
@@ -646,19 +635,19 @@ export default function DashboardClient() {
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
+        <>
           {view === "history" ? (
-            <motion.div
+            <div
               key="history-view"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="space-y-12 transform-gpu will-change-transform"
+              
+              
+              
+              
+              className="space-y-12  "
             >
               <div className="relative">
-                <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 rounded-[2rem] p-8 md:p-10 bg-card/40 supports-[backdrop-filter]:backdrop-blur-xl border border-white/5 shadow-xl overflow-hidden ring-1 ring-white/10 transform-gpu will-change-transform translate-z-0">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] -mr-32 -mt-32" />
+                <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 rounded-[2rem] p-8 md:p-10 bg-card/60  border border-white/5 shadow-xl overflow-hidden ring-1 ring-white/10   translate-z-0">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5  -mr-16 -mt-16 pointer-events-none" />
 
                   <div className="relative z-10 space-y-3 text-center md:text-left">
                     <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
@@ -698,11 +687,12 @@ export default function DashboardClient() {
                 {/* THE TELEPROMPTER - GOD TIER */}
                 <Link
                   href="/speak-with-me"
-                  className="group relative flex flex-col items-start p-10 rounded-[3rem] bg-gradient-to-br from-white/[0.08] to-transparent supports-[backdrop-filter]:backdrop-blur-2xl border border-white/10 hover:border-primary/50 transition-all duration-700 shadow-[0_30px_60px_rgba(0,0,0,0.4)] overflow-hidden transform-gpu will-change-transform translate-z-0"
+                  prefetch={true}
+                  className="group relative flex flex-col items-start p-10 rounded-[3rem] bg-gradient-to-br from-white/[0.08] to-transparent  border border-white/10 hover:border-primary/50 transition-all duration-700 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden   translate-z-0"
                 >
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.2)_0%,transparent_50%)]" />
-                  <div className="absolute -inset-[100%] group-hover:inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out" />
-                  <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/20 blur-[80px] rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-150 transition-transform duration-1000" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.15)_0%,transparent_50%)] pointer-events-none" />
+                  <div className="absolute -inset-[100%] group-hover:inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-48 h-48 bg-primary/10  rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none " />
 
                   <div className="relative z-10 w-16 h-16 rounded-[1.5rem] bg-primary text-white flex items-center justify-center mb-10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-[0_10px_40px_rgba(59,130,246,0.5)]">
                     <FastForward className="w-8 h-8" />
@@ -713,24 +703,25 @@ export default function DashboardClient() {
                       <div className="w-8 h-[2px] bg-primary rounded-full animate-pulse" />
                       <span className="text-[10px] font-black uppercase tracking-[0.5em] text-primary/80"></span>
                     </div>
-                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic text-foreground leading-[0.85] uppercase">THE <br /> TELEPROMPTER</h3>
+                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic text-foreground leading-[0.85] uppercase">PRACTICE <br /> SESSION</h3>
                     <p className="text-base md:text-lg text-muted-foreground font-medium italic opacity-70 group-hover:opacity-100 transition-opacity max-w-[280px]">
-                      Practice your <span className="text-primary font-bold">speaking skills</span> for big moments.
+                      Practice your speech with <span className="text-primary font-bold">guided prompts</span>.
                     </p>
                   </div>
                   <div className="relative z-10 mt-10 flex items-center gap-3 px-8 py-3.5 rounded-full bg-primary text-white font-black uppercase tracking-widest text-[10px] shadow-[0_15px_30px_rgba(59,130,246,0.4)] hover:scale-105 hover:bg-white hover:text-primary transition-all">
-                    START NOW <ArrowRight className="w-4 h-4" />
+                    START PRACTICE <ArrowRight className="w-4 h-4" />
                   </div>
                 </Link>
 
                 {/* PERFORMANCE HISTORY - GOD TIER */}
                 <Link
                   href="/reports"
-                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent supports-[backdrop-filter]:backdrop-blur-xl border border-white/10 hover:border-emerald-500/50 transition-all duration-700 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden transform-gpu will-change-transform translate-z-0"
+                  prefetch={true}
+                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent  border border-white/10 hover:border-emerald-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden   translate-z-0"
                 >
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.15)_0%,transparent_50%)]" />
-                  <div className="absolute -inset-[100%] group-hover:inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out" />
-                  <div className="absolute bottom-0 right-0 w-48 h-48 bg-emerald-500/10 blur-[60px] rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-150 transition-transform duration-1000" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.12)_0%,transparent_50%)] pointer-events-none" />
+                  <div className="absolute -inset-[100%] group-hover:inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-emerald-500/10  rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none " />
 
                   <div className="relative z-10 w-14 h-14 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
                     <History className="w-7 h-7" />
@@ -743,28 +734,28 @@ export default function DashboardClient() {
                     </div>
                     <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">SPEECH <br /> ANALYTICS</h3>
                     <p className="text-sm md:text-base text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
-                      See how <span className="text-emerald-500 font-bold">well you are doing</span> here.
+                      Your journey to <span className="text-emerald-500 font-bold">mastery</span> is mapped here.
                     </p>
                   </div>
                   <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-emerald-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all">
-                    SEE REPORTS <ArrowRight className="w-3.5 h-3.5" />
+                    VIEW REPORTS <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </Link>
               </div>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
+            <div
               key="practice-view"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              
+              
+              
             >
-              <AnimatePresence mode="wait">
+              <>
                 {rapidFireStep === 7 ? (
-                  <motion.div
+                  <div
                     key="rapid-fire-finished"
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                    
+                    
                     className="glass-card rounded-[2.5rem] p-10 md:p-14 text-center flex flex-col items-center shadow-2xl"
                   >
                     <div className="w-20 h-20 rounded-3xl bg-red-500/10 text-red-500 flex items-center justify-center mb-8">
@@ -781,13 +772,13 @@ export default function DashboardClient() {
                       SEE RESULT
                       <ChevronRight className="w-8 h-8" />
                     </button>
-                  </motion.div>
+                  </div>
                 ) : !isRecording && !isAnalyzing && !transcript ? (
-                  <motion.div
+                  <div
                     key="prompt-card"
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0, y: -20 }}
+                    
+                    
+                    
                     className="glass-card rounded-[2.5rem] p-10 md:p-14 mb-12 relative overflow-hidden group"
                   >
                     <div className="absolute top-0 right-0 p-10">
@@ -823,39 +814,39 @@ export default function DashboardClient() {
                         </button>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ) : (
-                  <motion.div
+                  <div
                     key="live-transcript-area"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
+                    
+                    
+                    
                     className="min-h-[400px] flex flex-col items-center justify-center text-center px-4"
                   >
                     <div className="relative mb-12">
-                      <motion.div
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
+                      <div
+                        
+                        
                         className="w-40 h-40 rounded-full blue-gradient flex items-center justify-center blue-glow relative z-10"
                       >
                         <span className="text-5xl font-black text-white">{timeLeft}</span>
-                      </motion.div>
-                      <motion.div
-                        animate={{ scale: [1, 1.8], opacity: [0.5, 0] }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
+                      </div>
+                      <div
+                        
+                        
                         className="absolute inset-0 border-4 border-primary rounded-full"
-                      ></motion.div>
+                      ></div>
                     </div>
                     <p className="text-xl md:text-3xl font-bold text-foreground leading-tight max-w-4xl italic mb-12">
                       {transcript || "Speak now. I am listening..."}
                     </p>
 
-                    <AnimatePresence>
+                    <>
                       {assistMode && isRecording && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 20 }}
+                        <div
+                          
+                          
+                          
                           className="fixed bottom-32 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-50"
                         >
                           <div className="glass-card p-6 rounded-[2rem] border-primary/30 shadow-2xl flex flex-col items-center gap-4">
@@ -867,32 +858,31 @@ export default function DashboardClient() {
                             </div>
                             <div className="flex flex-wrap justify-center gap-3">
                               {(suggestions.length > 0 ? suggestions : ["Loading points..."]).map((sug, i) => (
-                                <motion.div
-                                  key={i}
-                                  initial={{ opacity: 0, scale: 0.9 }}
-                                  animate={{ opacity: 1, scale: 1 }}
+                                <div key={i}
+                                  
+                                  
                                   className="px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-sm md:text-base whitespace-nowrap"
                                 >
                                   {sug}
-                                </motion.div>
+                                </div>
                               ))}
                             </div>
                           </div>
-                        </motion.div>
+                        </div>
                       )}
-                    </AnimatePresence>
-                  </motion.div>
+                    </>
+                  </div>
                 )}
-              </AnimatePresence>
+              </>
 
               <div className="flex flex-col items-center justify-center py-8">
-                <AnimatePresence mode="wait">
+                <>
                   {isRecording ? (
-                    <motion.div
+                    <div
                       key="recording"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
+                      
+                      
+                      
                       className="flex flex-col items-center gap-12 w-full"
                     >
                       <div className="flex flex-col sm:flex-row items-center gap-6 w-full justify-center">
@@ -913,12 +903,12 @@ export default function DashboardClient() {
                           </button>
                         )}
                       </div>
-                    </motion.div>
+                    </div>
                   ) : (
-                    <motion.div
+                    <div
                       key="start"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
+                      
+                      
                       className="flex flex-col items-center gap-10"
                     >
                       {!transcript ? (
@@ -956,13 +946,13 @@ export default function DashboardClient() {
                           </div>
                         </div>
                       )}
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
+                </>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </>
       </div>
     </div>
   );

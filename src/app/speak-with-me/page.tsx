@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { ArrowLeft, Play, Pause, RotateCcw, Timer, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -120,25 +120,25 @@ export default function TeleprompterPage() {
 
       {/* Main Experience Area */}
       <main className="flex-1 relative z-10 flex flex-col items-center justify-center">
-        <AnimatePresence mode="wait">
+        <>
 
           {stage === "countdown" && (
-            <motion.div 
+            <div 
               key="countdown"
-              initial={{ opacity: 0, scale: 2 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
+              
+              
+              
               className="absolute inset-0 flex items-center justify-center bg-black z-[100]"
             >
               <span className="text-[20rem] font-black italic leading-none">{countdown}</span>
-            </motion.div>
+            </div>
           )}
 
           {stage === "active" && (
-            <motion.div 
+            <div 
               key="active"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              
+              
               className="absolute inset-0 flex flex-col items-center"
             >
               {/* Focus Guides */}
@@ -152,7 +152,7 @@ export default function TeleprompterPage() {
               >
                 <div 
                   ref={scrollRef}
-                  className="w-full flex flex-col items-center will-change-transform pt-[45vh]"
+                  className="w-full flex flex-col items-center  pt-[45vh]"
                   style={{ willChange: 'transform' }}
                 >
                   <div className="w-full max-w-4xl text-center pb-[100vh]">
@@ -164,14 +164,14 @@ export default function TeleprompterPage() {
               </div>
 
               {/* Start Overlay Removed */}
-            </motion.div>
+            </div>
           )}
 
           {stage === "finished" && (
-            <motion.div 
+            <div 
               key="finished"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              
+              
               className="max-w-xl w-full text-center space-y-12 px-6"
             >
               <div className="space-y-6">
@@ -202,9 +202,9 @@ export default function TeleprompterPage() {
                   Exit Arena
                 </Link>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </>
       </main>
 
       {/* Bottom Controls */}

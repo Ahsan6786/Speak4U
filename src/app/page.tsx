@@ -7,130 +7,50 @@ import {
   Mic, Shield, TrendingUp, LogOut, ArrowRight,
   Zap, Globe, ChevronRight, Activity, Command,
   Cpu, Layers, Volume2, Fingerprint, BarChart3,
-  Dna, Play, Pause, Sparkles, MoveRight
+  Dna, Play, Pause, Sparkles, MoveRight, LayoutGrid
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { AuthModal } from "@/components/auth-modal";
-import { motion, AnimatePresence, useScroll, useSpring, useInView } from "framer-motion";
 
-// --- SUB-COMPONENT: DYNAMIC PARTICLE BACKGROUND ---
-const HeroParticles = () => {
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
-  const particles = useMemo(() => {
-    return [...Array(12)].map((_, i) => ({
-      id: i,
-      x: Math.random() * 100 + "%",
-      y: Math.random() * 100 + "%",
-      opacity: Math.random() * 0.5 + 0.1,
-      targetY: Math.random() * -100 - 50,
-      duration: Math.random() * 5 + 10,
-    }));
-  }, []);
-
-  if (!mounted) return null;
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#FFD70005_0%,transparent_50%)]" />
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute w-1.5 h-1.5 bg-yellow-500/10 rounded-full will-change-transform"
-          style={{ transform: "translateZ(0)", left: p.x, top: p.y }}
-          initial={{ opacity: 0 }}
-          animate={{
-            y: [0, p.targetY],
-            opacity: [0, p.opacity, 0]
-          }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-      ))}
-    </div>
-  );
-};
-
-// --- SUB-COMPONENT: AI TERMINAL MOCKUP ---
-const TerminalMockup = () => {
-  const [lines, setLines] = useState<string[]>([]);
-  const consoleStrings = [
-    "> Initialize Neural Voice Engine...",
-    "> Frequency Analysis: OPTIMAL",
-    "> Detecting Filler Words: 'Uh', 'Like' suppressed.",
-    "> Confidence Quotient: 98.4%",
-    "> Resonance Calibration: ACTIVE",
-    "> Deploying Vocal Authority Matrix..."
+const MobileDemo = () => {
+  const images = [
+    "/i1.jpg", "/i2.jpg", "/i3.jpg", "/i4.jpg", "/i5.jpg", 
+    "/i6.jpg", "/i7.jpg", "/i8.jpg", "/i9.jpg", "/i11.jpg", 
+    "/i12.jpg", "/i13.jpg"
   ];
+  
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      setLines((prev) => [...prev, consoleStrings[i]].slice(-5));
-      i = (i + 1) % consoleStrings.length;
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % images.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [images.length]);
 
   return (
-    <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-yellow-500/20 rounded-xl p-4 font-mono text-[10px] md:text-xs text-yellow-500/80 shadow-2xl">
-      <div className="flex gap-1.5 mb-3 border-b border-white/5 pb-2">
-        <div className="w-2 h-2 rounded-full bg-red-500/50" />
-        <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
-        <div className="w-2 h-2 rounded-full bg-green-500/50" />
+    <div className="relative w-[300px] h-[600px] md:w-[350px] md:h-[700px] mx-auto">
+      {/* Phone Frame */}
+      <div className="absolute inset-0 bg-[#0A0A0A] rounded-[3rem] border-[8px] border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden z-20">
+        
+        {/* Dynamic Island Notch */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-40" />
+
+        {/* Screen Content Wrapper */}
+        <div className="absolute inset-0 bg-black z-30">
+          <div className="absolute inset-0">
+            <Image 
+              src={images[index]} 
+              alt="App Interface" 
+              fill 
+              sizes="(max-width: 768px) 300px, 350px"
+              className="object-cover object-center" 
+              priority
+            />
+          </div>
+        </div>
       </div>
-      {lines.map((line, idx) => (
-        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={idx} className="mb-1">
-          {line}
-        </motion.div>
-      ))}
-      <motion.div animate={{ opacity: [0, 1] }} transition={{ repeat: Infinity, duration: 0.8 }} className="inline-block w-2 h-4 bg-yellow-500 align-middle ml-1" />
-    </div>
-  );
-};
-
-// --- SUB-COMPONENT: VISUALIZER MOCKUP ---
-const VisualizerMockup = () => {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const bars = useMemo(() => {
-    return [...Array(40)].map((_, i) => ({
-      id: i,
-      heights: [10, Math.random() * 80 + 20, 10],
-      duration: 1.5,
-      delay: i * 0.05
-    }));
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="flex items-center justify-center h-full gap-1">
-        {[...Array(40)].map((_, i) => (
-          <div key={i} className="w-1.5 h-4 bg-yellow-500/20 rounded-full" />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-center h-full gap-1">
-      {bars.map((bar) => (
-        <motion.div
-          key={bar.id}
-          animate={{ height: bar.heights }}
-          transition={{ duration: bar.duration, repeat: Infinity, ease: "easeInOut", delay: bar.delay }}
-          className="w-1.5 bg-yellow-500/40 rounded-full will-change-transform"
-          style={{ transform: "translateZ(0)" }}
-        />
-      ))}
     </div>
   );
 };
@@ -140,10 +60,12 @@ export default function Home() {
   const { user, logout } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // High-performance scroll tracking
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -158,28 +80,26 @@ export default function Home() {
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
 
       {/* --- NAVIGATION --- */}
-      <nav className={`fixed top-0 w-full z-[100] transition-all duration-700 ${scrolled ? "py-4" : "py-10"
-        }`}>
+      <nav className="absolute top-0 w-full z-[100] py-10">
         <div className="max-w-[1400px] mx-auto px-6">
-          <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? "bg-black/60 supports-[backdrop-filter]:backdrop-blur-2xl border border-white/5 p-4 rounded-2xl shadow-2xl" : ""
+          <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? "bg-black/60  border border-white/5 p-4 rounded-2xl shadow-2xl" : ""
             }`}>
-            <Link href="/" className="flex items-center no-underline border-none outline-none">
-              <Image src="/splash.png" alt="Logo" width={220} height={80} className="w-auto h-16 md:h-20" priority />
+            <Link href="/" className="flex items-center">
+              <Image src="/splash.png" alt="Logo" width={320} height={100} className="w-auto h-20 md:h-32" priority />
             </Link>
 
             <div className="flex items-center gap-6">
               {!user ? (
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="relative overflow-hidden bg-yellow-500 text-black px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all group shadow-lg shadow-yellow-500/10"
+                  className="bg-white text-black px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest hover:bg-zinc-200 active:scale-95 transition-all shadow-lg shadow-white/10"
                 >
-                  <span className="relative z-10">Get Started</span>
-                  <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  Get Started
                 </button>
               ) : (
                 <div className="flex items-center gap-4">
-                  <Link href="/dashboard" className="text-[10px] font-black uppercase text-yellow-500 border border-yellow-500/20 px-4 py-2 rounded-lg hover:bg-yellow-500/10 transition-all">Dashboard</Link>
-                  <button onClick={logout} className="text-zinc-500 hover:text-white"><LogOut size={20} /></button>
+                  <Link href="/dashboard" className="text-sm font-black uppercase bg-white text-black px-8 py-3 rounded-full hover:bg-zinc-200 transition-all shadow-lg shadow-white/20">Dashboard</Link>
+                  <button onClick={logout} className="text-zinc-500 hover:text-white"><LogOut size={24} /></button>
                 </div>
               )}
             </div>
@@ -188,27 +108,15 @@ export default function Home() {
       </nav>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative min-h-svh flex flex-col items-center justify-center px-6 pt-20 overflow-hidden">
-        <HeroParticles />
-
-        {/* Animated Background Gradients */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] opacity-10 pointer-events-none">
-          <div className="absolute inset-0 bg-yellow-500 blur-[180px] rounded-full animate-pulse" />
-        </div>
-
-        <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-20">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="transform-gpu will-change-transform"
-          >
-            <div className="flex items-center gap-3 mb-8">
-              <div className="h-[1px] w-12 bg-yellow-500" />
+      <section className="relative h-svh md:min-h-screen flex flex-col items-center justify-center px-6 pt-44 md:pt-64 overflow-hidden">
+        
+        <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-10 md:gap-20">
+          <div className=" ">
+            <div className="flex items-center gap-3 mb-6 md:mb-8">
               <span className="text-yellow-500 font-black text-xs uppercase tracking-[0.4em]"></span>
             </div>
 
-            <h1 className="text-7xl md:text-[110px] font-black leading-[0.85] tracking-tighter mb-10">
+            <h1 className="text-5xl md:text-[110px] font-black leading-[0.85] tracking-tighter mb-8 md:mb-10">
               UNLEASH THE <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-white">DOMINANT</span><br />
               VOICE.
@@ -220,63 +128,79 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap gap-6">
-              <button onClick={() => setIsAuthModalOpen(true)} className="px-10 py-5 bg-white text-black font-black rounded-2xl flex items-center gap-3 hover:bg-[#00d2ff] hover:scale-105 transition-all shadow-2xl shadow-white/10">
-                ACCESS PLATFORM <MoveRight size={20} />
-              </button>
-
+              {!user ? (
+                <button 
+                  onClick={() => setIsAuthModalOpen(true)} 
+                  className="px-12 py-6 bg-white text-black font-black rounded-2xl flex items-center gap-3 hover:bg-zinc-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.1)] text-lg uppercase tracking-wider"
+                >
+                  GET STARTED <MoveRight size={24} />
+                </button>
+              ) : (
+                <Link 
+                  href="/dashboard"
+                  className="px-12 py-6 bg-white text-black font-black rounded-2xl flex items-center gap-3 hover:bg-zinc-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.2)] text-lg uppercase tracking-wider"
+                >
+                  GO TO DASHBOARD <LayoutGrid size={24} />
+                </Link>
+              )}
             </div>
-          </motion.div>
+          </div>
 
           {/* Hero Visual: The "Matrix" */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, rotate: 2 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
-            className="relative flex justify-center lg:justify-end transform-gpu will-change-transform"
-          >
+          <div className="relative flex justify-center lg:justify-end">
             <div className="relative w-full max-w-[500px] aspect-square">
               {/* Glass Card 1 */}
-              <div className="absolute top-0 right-0 w-4/5 h-4/5 bg-zinc-900/50 supports-[backdrop-filter]:backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 shadow-2xl transform rotate-3 z-10 translate-z-0">
-                <div className="flex justify-between items-start mb-12">
-                  <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <Volume2 className="text-black" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Confidence Score</div>
-                    <div className="text-3xl font-black text-yellow-500">98.2%</div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  {[70, 40, 90].map((w, i) => (
-                    <div key={i} className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }} animate={{ width: `${w}%` }}
-                        transition={{ duration: 2, delay: 1 }}
-                        className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400"
-                      />
-                    </div>
-                  ))}
-                </div>
+              <div className="absolute top-0 right-0 w-4/5 h-4/5 bg-zinc-900/50  border border-white/10 rounded-[3rem] shadow-2xl transform rotate-3 z-10 translate-z-0 overflow-hidden">
+                <Image src="/logo.jpeg" alt="Logo" fill className="object-cover opacity-80" />
               </div>
-
-
-              {/* Background Geometric Decoration */}
-              <div className="absolute inset-0 border-2 border-yellow-500/20 rounded-full animate-[spin_20s_linear_infinity] opacity-20" />
-              <div className="absolute inset-4 border border-dashed border-white/10 rounded-full animate-[spin_30s_linear_infinity_reverse]" />
             </div>
-          </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- DEMO SECTION --- */}
+      <section className="py-32 px-6 max-w-7xl mx-auto overflow-hidden">
+        <div className="grid lg:grid-cols-2 items-center gap-20">
+          <div
+            
+            className="order-2 lg:order-1"
+          >
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-8 uppercase italic leading-[0.9]">
+              EXPERIENCE THE <span className="text-yellow-500 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">NEURAL</span> INTERFACE.
+            </h2>
+            <p className="text-zinc-400 text-xl md:text-2xl mb-12 leading-relaxed">
+              Witness the power of real-time vocal processing. From Bio-Metric IDs to millisecond filler-word detection, our interface is designed for the elite.
+            </p>
+            <div className="space-y-6">
+              {[
+                { title: "Real-time Processing", desc: "Latency-free neural decoding of your speech patterns." },
+                { title: "Visual Bio-Feedback", desc: "Dynamic heatmaps of your vocal resonance and impact." },
+                { title: "Adaptive Interface", desc: "UI that evolves with your speaking style." }
+              ].map((item, i) => (
+                <div key={i} className="flex gap-4">
+                  <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mt-2.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-black text-white uppercase italic text-sm tracking-widest">{item.title}</h4>
+                    <p className="text-zinc-500 text-sm">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            
+            className="flex justify-center order-1 lg:order-2"
+          >
+            <MobileDemo />
+          </div>
         </div>
       </section>
 
       {/* --- STATS STRIP --- */}
       <div className="py-10 bg-white text-black overflow-hidden relative">
-        <motion.div
-          animate={{ x: [0, -1000] }}
-          transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
-          className="flex whitespace-nowrap gap-20 items-center"
-        >
-          {[...Array(10)].map((_, i) => (
+        <div className="flex whitespace-nowrap gap-20 items-center animate-marquee">
+          {[...Array(20)].map((_, i) => (
             <div key={i} className="flex items-center gap-6">
               <span className="text-4xl font-black tracking-tighter uppercase italic">Neural Processing</span>
               <div className="w-3 h-3 bg-black rounded-full" />
@@ -286,7 +210,7 @@ export default function Home() {
               <div className="w-3 h-3 bg-black rounded-full" />
             </div>
           ))}
-        </motion.div>
+        </div>
       </div>
 
       {/* --- FEATURES: BENTO GRID --- */}
@@ -299,10 +223,8 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
           {/* Main Feature */}
-          <motion.div
-            whileHover={{ y: -5 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="md:col-span-7 bg-zinc-900/30 supports-[backdrop-filter]:backdrop-blur-3xl border border-white/5 rounded-[4rem] p-12 overflow-hidden relative group transform-gpu will-change-transform"
+          <div
+            className="md:col-span-7 bg-zinc-900/30  border border-white/5 rounded-[4rem] p-12 overflow-hidden relative group  "
           >
             <div className="relative z-10">
               <div className="flex gap-4 items-center mb-10">
@@ -315,21 +237,20 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-zinc-400 text-xl leading-relaxed mb-8">Our engine identifies your unique pitch baseline and resonance profile, ensuring that coaching feels natural, never robotic.</p>
-              <button className="text-yellow-500 font-bold flex items-center gap-2 group-hover:gap-4 transition-all">
+              <button className="text-yellow-500 font-bold flex items-center gap-2 transition-all">
                 LEARN MORE <ArrowRight size={18} />
               </button>
             </div>
             {/* Visual background */}
-            <div className="absolute right-0 bottom-0 opacity-10 group-hover:opacity-30 transition-opacity">
+            <div className="absolute right-0 bottom-0 opacity-10 transition-opacity">
               <Dna size={400} />
             </div>
-          </motion.div>
+          </div>
 
           {/* Side Feature 1 */}
-          <motion.div
-            whileHover={{ y: -5 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="md:col-span-5 bg-yellow-500 rounded-[4rem] p-12 text-black flex flex-col justify-between transform-gpu will-change-transform"
+          <div
+            
+            className="md:col-span-5 bg-white rounded-[4rem] p-12 text-black flex flex-col justify-between  "
           >
             <div className="flex justify-between items-start">
               <Fingerprint size={48} strokeWidth={2.5} />
@@ -339,24 +260,24 @@ export default function Home() {
               <h3 className="text-4xl font-black tracking-tighter mb-4 italic">Unrivaled Privacy.</h3>
               <p className="font-bold opacity-80 leading-snug">All processing happens in an isolated enclave. Your voice is yours alone. Period.</p>
             </div>
-          </motion.div>
+          </div>
 
           {/* Small Bento 1 */}
-          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:border-yellow-500/50 transition-colors">
+          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:bg-zinc-800 transition-colors">
             <BarChart3 className="text-yellow-500 mb-6" size={32} />
             <h4 className="text-xl font-black mb-2 uppercase italic">Micro-Analytics</h4>
             <p className="text-zinc-500 text-sm">Every pause, every breath, every 'um' analyzed to the millisecond.</p>
           </div>
 
           {/* Small Bento 2 */}
-          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:border-yellow-500/50 transition-colors">
+          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:bg-zinc-800 transition-colors">
             <Layers className="text-yellow-500 mb-6" size={32} />
             <h4 className="text-xl font-black mb-2 uppercase italic">Multi-Modal</h4>
             <p className="text-zinc-500 text-sm">Switch between speech, debate, and interview modes instantly.</p>
           </div>
 
           {/* Small Bento 3 */}
-          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:border-yellow-500/50 transition-colors">
+          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:bg-zinc-800 transition-colors">
             <Sparkles className="text-yellow-500 mb-6" size={32} />
             <h4 className="text-xl font-black mb-2 uppercase italic">AI Persona</h4>
             <p className="text-zinc-500 text-sm">Practice against challenging AI personas that simulate real high-stakes environments.</p>
@@ -378,13 +299,12 @@ export default function Home() {
                 { label: "Command Presence", val: 88 },
                 { label: "Emotional Resonance", val: 91 },
               ].map((stat, i) => (
-                <div key={i} className="p-6 bg-zinc-900/50 supports-[backdrop-filter]:backdrop-blur-lg border border-white/5 rounded-2xl flex items-center justify-between transform-gpu">
+                <div key={i} className="p-6 bg-zinc-900/50  border border-white/5 rounded-2xl flex items-center justify-between ">
                   <span className="font-bold text-zinc-300 uppercase tracking-widest text-xs">{stat.label}</span>
                   <div className="flex items-center gap-4">
                     <div className="w-32 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }} whileInView={{ width: `${stat.val}%` }}
-                        viewport={{ once: true }}
+                      <div
+                        
                         className="h-full bg-yellow-500"
                       />
                     </div>
@@ -396,13 +316,27 @@ export default function Home() {
           </div>
 
           <div className="lg:w-1/2 relative">
-            <div className="w-full aspect-video bg-zinc-900 border border-white/10 rounded-[2.5rem] p-4 relative overflow-hidden shadow-2xl">
-              <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
-              {/* Simulated Waveform Visualizer */}
-              <VisualizerMockup />
-              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4">
-                <button className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                  <Pause fill="black" size={24} />
+            <div className="w-full aspect-video bg-zinc-900 border-4 border-yellow-500 rounded-[2.5rem] p-4 relative overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.3)]">
+              <div className="absolute inset-0 bg-black opacity-20 pointer-events-none z-10" />
+              
+              {/* Brat Animation: High-Contrast Waveform */}
+              <div className="absolute inset-0 flex items-center justify-center gap-1 px-10">
+                {[...Array(40)].map((_, i) => (
+                  <div 
+                    key={i}
+                    className="w-1 md:w-2 bg-yellow-500 rounded-full animate-brat-wave"
+                    style={{ 
+                      height: `${Math.random() * 60 + 20}%`,
+                      animationDelay: `${i * 0.05}s`,
+                      boxShadow: '0 0 15px rgba(234, 179, 8, 0.5)'
+                    }}
+                  />
+                ))}
+              </div>
+              
+              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-20">
+                <button className="w-16 h-16 bg-yellow-500 text-black rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-2xl">
+                  <Play fill="black" size={24} className="ml-1" />
                 </button>
               </div>
             </div>
@@ -415,7 +349,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-20 mb-32">
             <div className="md:col-span-2">
-              <Image src="/splash.png" alt="Logo" width={220} height={80} className="mb-10 opacity-80 h-16 w-auto" />
+              <Image src="/splash.png" alt="Logo" width={180} height={50} className="mb-10 opacity-80" />
               <p className="text-zinc-500 text-xl max-w-sm mb-10 leading-relaxed">Forging the next generation of global leaders through the power of peak communication.</p>
               <div className="flex gap-6">
                 <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center border border-white/5 hover:border-yellow-500/50 transition-colors cursor-pointer">
@@ -457,11 +391,35 @@ export default function Home() {
         </div>
       </footer>
 
+      {/* Scroll to Top Button */}
+      {scrolled && (
+        <button 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-10 right-10 w-16 h-16 bg-yellow-500 text-black rounded-2xl flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all z-[200] group"
+        >
+          <ArrowRight className="w-8 h-8 -rotate-90 group-hover:-translate-y-1 transition-transform" />
+        </button>
+      )}
+
       {/* High-Impact Global Styles (Tailwind can handle most, but adding for fine-tuning) */}
       <style jsx global>{`
         @keyframes subtle-spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        @keyframes brat-wave {
+          0%, 100% { transform: scaleY(1); opacity: 0.5; }
+          50% { transform: scaleY(2.5); opacity: 1; }
+        }
+        .animate-marquee {
+          animation: marquee 30s linear infinite;
+        }
+        .animate-brat-wave {
+          animation: brat-wave 0.6s ease-in-out infinite;
         }
         body {
           overscroll-behavior: none;
