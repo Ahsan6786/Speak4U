@@ -4,8 +4,8 @@
   "description": "Master your voice with AI-powered speaking coaching.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A1A2F",
-  "theme_color": "#0e87cc",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "/logo.jpeg",

@@ -12,6 +12,8 @@ import { AppInitializer } from "@/components/app-initializer";
 
 import type { Metadata, Viewport } from "next";
 
+import { ThemeColorHandler } from "@/components/ThemeColorHandler";
+
 export const metadata: Metadata = {
   title: "REVIAL – Daily AI Speaking Coach",
   description: "Stop hesitating. Start speaking with clarity, structure, and confidence.",
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0e87cc",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -42,6 +44,7 @@ export default function RootLayout({
         <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <AppInitializer>
+              <ThemeColorHandler />
               {children}
               <InstallPrompt />
             </AppInitializer>

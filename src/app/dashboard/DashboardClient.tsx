@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2, Command, Settings, User, Users, Hash } from "lucide-react";
+import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2, Command, Settings, User, Users, Hash, Book, Camera } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,6 +14,7 @@ import { db } from "@/lib/firebase";
 import { doc, setDoc, onSnapshot, collection, query, orderBy, limit, deleteDoc, increment } from "firebase/firestore";
 import { SignOutModal } from "@/components/sign-out-modal";
 import { SettingsModal } from "@/components/settings-modal";
+import { DailyDictionary } from "@/components/DailyDictionary";
 
 export default function DashboardClient() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function DashboardClient() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [userName, setUserName] = useState("");
-  const [view, setView] = useState<"history" | "practice">("history");
+  const [view, setView] = useState<"history" | "practice" | "dictionary">("history");
   const [sessions, setSessions] = useState<any[]>([]);
   const [assistMode, setAssistMode] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -41,6 +42,31 @@ export default function DashboardClient() {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [newUserName, setNewUserName] = useState("");
+  const [scrolled, setScrolled] = useState(false);
+  const scrollPosRef = useRef<number>(0);
+
+  // Scroll memory for view changes
+  useEffect(() => {
+    if (view === "dictionary") {
+      scrollPosRef.current = window.scrollY;
+      window.scrollTo(0, 0);
+    } else if (view === "history" && scrollPosRef.current > 0) {
+      setTimeout(() => {
+        window.scrollTo({
+          top: scrollPosRef.current,
+          behavior: "smooth"
+        });
+      }, 100);
+    }
+  }, [view]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const fetchNewQuestion = async (force = false) => {
     if (isFetchingQuestion && !force) return;
@@ -322,10 +348,29 @@ export default function DashboardClient() {
 
   if (authLoading || dataLoading) {
     return (
-      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-6">
-          <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-muted-foreground font-black animate-pulse uppercase tracking-[0.3em] text-[10px]">REVIAL Engine Loading</p>
+      <div className="min-h-screen bg-background p-6 md:p-12 space-y-12 animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div className="w-12 h-12 rounded-full bg-muted" />
+            <div className="hidden md:flex gap-4">
+              <div className="w-12 h-12 rounded-full bg-muted" />
+              <div className="w-12 h-12 rounded-full bg-muted" />
+              <div className="w-12 h-12 rounded-full bg-muted" />
+            </div>
+          </div>
+          <div className="w-24 h-12 rounded-full bg-muted" />
+        </div>
+
+        {/* Hero Card Skeleton */}
+        <div className="w-full h-48 md:h-64 rounded-[2.5rem] bg-muted/40 border border-white/5" />
+
+        {/* Grid Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+          <div className="h-64 rounded-[2.5rem] bg-muted/30 border border-white/5" />
+          <div className="h-64 rounded-[2.5rem] bg-muted/30 border border-white/5" />
+          <div className="h-64 rounded-[2.5rem] bg-muted/30 border border-white/5" />
+          <div className="h-64 rounded-[2.5rem] bg-muted/30 border border-white/5" />
         </div>
       </div>
     );
@@ -541,9 +586,9 @@ export default function DashboardClient() {
             <button
               onClick={() => {
                 if (isRecording) stopRecording();
-                view === "practice" ? setView("history") : router.push("/?stay=true");
+                view === "practice" || view === "dictionary" ? setView("history") : router.push("/?stay=true");
               }}
-              className="w-12 h-12 rounded-full bg-emerald-500 border-2 border-emerald-600 flex items-center justify-center text-white hover:bg-emerald-600 transition-all hover:scale-105 shadow-lg shadow-emerald-500/20"
+              className="w-12 h-12 rounded-full bg-emerald-500 border-2 border-emerald-600 flex items-center justify-center text-white hover:bg-emerald-600 transition-all hover:scale-105 shadow-md opacity-80 hover:opacity-100"
               title="Menu"
             >
               <LayoutGrid className="w-5 h-5" />
@@ -552,11 +597,21 @@ export default function DashboardClient() {
             {/* Friends Navigation */}
             <Link
               href="/friends"
-              className="w-12 h-12 rounded-full bg-purple-500 border-2 border-purple-600 flex items-center justify-center text-white hover:bg-purple-600 transition-all hover:scale-105 shadow-lg shadow-purple-500/20"
+              className="w-12 h-12 rounded-full bg-purple-500 border-2 border-purple-600 flex items-center justify-center text-white hover:bg-purple-600 transition-all hover:scale-105 shadow-md opacity-80 hover:opacity-100"
               title="Friends"
             >
               <MessageSquare className="w-5 h-5" />
             </Link>
+
+            {/* Profile Navigation */}
+            <Link
+              href="/profile"
+              className="w-12 h-12 rounded-full bg-pink-500 border-2 border-pink-600 flex items-center justify-center text-white hover:bg-pink-600 transition-all hover:scale-105 shadow-md opacity-80 hover:opacity-100"
+              title="My Profile & Analytics"
+            >
+              <User className="w-5 h-5" />
+            </Link>
+
 
             <ThemeToggle />
             <button
@@ -564,7 +619,7 @@ export default function DashboardClient() {
                 if (isRecording) stopRecording();
                 setShowSettings(true);
               }}
-              className="w-12 h-12 rounded-full bg-yellow-500 border-2 border-yellow-600 flex items-center justify-center text-white hover:bg-yellow-600 transition-all hover:scale-105 shadow-lg shadow-yellow-500/20"
+              className="w-12 h-12 rounded-full bg-yellow-500 border-2 border-yellow-600 flex items-center justify-center text-white hover:bg-yellow-600 transition-all hover:scale-105 shadow-md opacity-80 hover:opacity-100"
               title="Settings"
             >
               <Settings className="w-5 h-5" />
@@ -572,9 +627,9 @@ export default function DashboardClient() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="h-12 px-6 rounded-full bg-orange-500 text-white flex items-center gap-2 font-black shadow-lg shadow-orange-500/20">
-              <Flame className="w-5 h-5 fill-current" />
-              <span>{streak}</span>
+            <div className="w-12 h-12 rounded-full bg-orange-500 border-2 border-orange-600 text-white flex items-center justify-center font-black shadow-md opacity-90 hover:opacity-100 transition-opacity gap-1">
+              <Flame className="w-4 h-4 fill-current flex-shrink-0" />
+              <span className="text-xs">{streak}</span>
             </div>
           </div>
         </div>
@@ -647,9 +702,9 @@ export default function DashboardClient() {
                       <div className="w-8 h-[2px] bg-primary rounded-full animate-pulse" />
                       <span className="text-[10px] font-black uppercase tracking-[0.5em] text-primary/80"></span>
                     </div>
-                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic text-foreground leading-[0.85] uppercase">PRACTICE <br /> SESSION</h3>
+                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter italic text-foreground leading-[0.85] uppercase">SPEAK <br /> WITH ME</h3>
                     <p className="text-base md:text-lg text-muted-foreground font-medium italic opacity-70 group-hover:opacity-100 transition-opacity max-w-[280px]">
-                      Practice your speech with <span className="text-primary font-bold">guided prompts</span>.
+                      Master the art of <span className="text-primary font-bold">vocal command</span>.
                     </p>
                   </div>
                   <div className="relative z-10 mt-10 flex items-center gap-3 px-8 py-3.5 rounded-full bg-primary text-white font-black uppercase tracking-widest text-[10px] shadow-[0_15px_30px_rgba(59,130,246,0.4)] hover:scale-105 hover:bg-white hover:text-primary transition-all">
@@ -657,9 +712,9 @@ export default function DashboardClient() {
                   </div>
                 </Link>
 
-                {/* PERFORMANCE HISTORY - GOD TIER */}
+                {/* PERFORMANCE PROFILE - GOD TIER */}
                 <Link
-                  href="/reports"
+                  href="/profile"
                   prefetch={true}
                   className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent  border border-white/10 hover:border-emerald-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden   translate-z-0"
                 >
@@ -668,21 +723,21 @@ export default function DashboardClient() {
                   <div className="absolute bottom-0 right-0 w-40 h-40 bg-emerald-500/10  rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none " />
 
                   <div className="relative z-10 w-14 h-14 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
-                    <History className="w-7 h-7" />
+                    <User className="w-7 h-7" />
                   </div>
 
                   <div className="relative z-10 space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-[1.5px] bg-emerald-500 rounded-full" />
-                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-emerald-500"></span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-emerald-500">Analytics Dashboard</span>
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">SPEECH <br /> ANALYTICS</h3>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">PERFORMANCE <br /> PROFILE</h3>
                     <p className="text-sm md:text-base text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
-                      Your journey to <span className="text-emerald-500 font-bold">mastery</span> is mapped here.
+                      Deep <span className="text-emerald-500 font-bold">analytics</span> and full session history.
                     </p>
                   </div>
                   <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-emerald-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all">
-                    VIEW REPORTS <ArrowRight className="w-3.5 h-3.5" />
+                    VIEW PROFILE <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </Link>
 
@@ -713,34 +768,64 @@ export default function DashboardClient() {
                   </div>
                 </Link>
 
-                {/* PUBLIC LOUNGE - SIMPLIFIED */}
-                <Link
-                  href="/rooms"
-                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-indigo-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden translate-z-0"
+                {/* DAILY DICTIONARY - NEW CARD */}
+                <button
+                  onClick={() => setView("dictionary")}
+                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-blue-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden text-left"
                 >
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.12)_0%,transparent_50%)] pointer-events-none" />
-                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.12)_0%,transparent_50%)] pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none" />
 
-                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-indigo-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-500 shadow-[0_0_30px_rgba(99,102,241,0.4)]">
-                    <Users className="w-7 h-7" />
+                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-blue-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-500 shadow-[0_0_30px_rgba(59,130,246,0.4)]">
+                    <Book className="w-7 h-7" />
                   </div>
 
                   <div className="relative z-10 space-y-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-[1.5px] bg-indigo-500 rounded-full" />
-                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-indigo-500"></span>
+                      <div className="w-6 h-[1.5px] bg-blue-500 rounded-full" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-blue-500">New Feature</span>
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">PUBLIC <br /> LOUNGE</h3>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">DAILY <br /> DICTIONARY</h3>
                     <p className="text-sm md:text-base text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
-                      Join the <span className="text-indigo-500 font-bold">global conversation</span> with all speakers.
+                      Learn elite words and <span className="text-blue-500 font-bold">speak fluently</span> with Hinglish context.
                     </p>
                   </div>
-                  <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-indigo-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-indigo-500/30 hover:scale-105 transition-all">
-                    ENTER LOUNGE <ArrowRight className="w-3.5 h-3.5" />
+                  <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-blue-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-blue-500/30 hover:scale-105 transition-all">
+                    LEARN WORDS <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </button>
+
+                {/* MIRROR MODE - NEW CARD */}
+                <Link
+                  href="/mirror"
+                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-pink-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden text-left"
+                >
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(236,72,153,0.12)_0%,transparent_50%)] pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-pink-500/10 rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none" />
+
+                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-pink-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-[0_0_30px_rgba(236,72,153,0.4)]">
+                    <Camera className="w-7 h-7" />
+                  </div>
+
+                  <div className="relative z-10 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-[1.5px] bg-pink-500 rounded-full" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-pink-500">Live Training</span>
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">MIRROR <br /> MODE</h3>
+                    <p className="text-sm md:text-base text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
+                      Watch yourself speak and <span className="text-pink-500 font-bold">master your body language</span>.
+                    </p>
+                  </div>
+                  <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-pink-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-pink-500/30 hover:scale-105 transition-all">
+                    START MIRROR <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </Link>
+
               </div>
             </div>
+          ) : view === "dictionary" ? (
+            <DailyDictionary />
           ) : (
             <div
               key="practice-view"
@@ -945,6 +1030,16 @@ export default function DashboardClient() {
           )}
         </>
       </div>
+
+      {/* Scroll to Top Button */}
+      {scrolled && view !== "practice" && (
+        <button 
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-foreground text-background rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all z-[200] group"
+        >
+          <ArrowRight className="w-6 h-6 -rotate-90 group-hover:-translate-y-1 transition-transform" />
+        </button>
+      )}
     </div>
   );
 }

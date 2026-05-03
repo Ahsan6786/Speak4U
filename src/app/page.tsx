@@ -8,8 +8,10 @@ import {
   Mic, Shield, TrendingUp, LogOut, ArrowRight,
   Zap, Globe, ChevronRight, Activity, Command,
   Cpu, Layers, Volume2, Fingerprint, BarChart3,
-  Dna, Play, Pause, Sparkles, MoveRight, LayoutGrid
+  Dna, Play, Pause, Sparkles, MoveRight, LayoutGrid,
+  Flame, Book, Wand2, FastForward
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/auth-provider";
 import { AuthModal } from "@/components/auth-modal";
 import { SignOutModal } from "@/components/sign-out-modal";
@@ -40,16 +42,25 @@ const MobileDemo = () => {
 
         {/* Screen Content Wrapper */}
         <div className="absolute inset-0 bg-black z-30">
-          <div className="absolute inset-0">
-            <Image 
-              src={images[index]} 
-              alt="App Interface" 
-              fill 
-              sizes="(max-width: 768px) 300px, 350px"
-              className="object-cover object-center" 
-              priority
-            />
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={index}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1, ease: "easeInOut" }}
+              className="absolute inset-0"
+            >
+              <Image 
+                src={images[index]} 
+                alt="App Interface" 
+                fill 
+                sizes="(max-width: 768px) 300px, 350px"
+                className="object-cover object-center" 
+                priority
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
@@ -200,13 +211,15 @@ function HomeContent() {
               SEE HOW <span className="text-yellow-500 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">REVIAL</span> WORKS.
             </h2>
             <p className="text-zinc-400 text-xl md:text-2xl mb-12 leading-relaxed">
-              See your voice change in real-time. We help you find your best speaking style and show you how to improve instantly.
+              Master the art of speaking with tools designed for real-world impact. We turn your voice into your greatest asset.
             </p>
             <div className="space-y-6">
               {[
-                { title: "Real-time Processing", desc: "Latency-free neural decoding of your speech patterns." },
-                { title: "Visual Bio-Feedback", desc: "Dynamic heatmaps of your vocal resonance and impact." },
-                { title: "Adaptive Interface", desc: "UI that evolves with your speaking style." }
+                { title: "AI Voice Auditing", desc: "Instant neural analysis of clarity, impact, and command presence." },
+                { title: "Rapid Fire Practice", desc: "Intense 6-round drills to build split-second communication confidence." },
+                { title: "Elite Dictionary", desc: "1000+ words with Hinglish meanings and daily-use context for master communication." },
+                { title: "Teleprompter", desc: "Speak with precision and professional clarity using our advanced neural teleprompter." },
+                { title: "Expert Guidance", desc: "Get real-time AI suggestions and prompts to improve your speech while you practice." }
               ].map((item, i) => (
                 <div key={i} className="flex gap-4">
                   <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mt-2.5 flex-shrink-0" />
@@ -244,80 +257,7 @@ function HomeContent() {
         </div>
       </div>
 
-      {/* --- FEATURES: BENTO GRID --- */}
-      <section id="ecosystem" className="py-32 px-6 max-w-7xl mx-auto">
-        <div className="text-center mb-20">
-          <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase italic">Built for <span className="text-yellow-500">Everyone.</span></h2>
-          <p className="text-zinc-500 text-xl max-w-2xl mx-auto">We studied thousands of great speeches to give you the best advice on how to talk better.</p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-
-          {/* Main Feature */}
-          <div
-            className="md:col-span-7 bg-zinc-900/30 border border-white/5 rounded-[4rem] p-10 md:p-14 overflow-hidden relative group min-h-[400px] flex flex-col justify-center"
-          >
-            <div className="relative z-10">
-              <div className="flex items-center gap-6 mb-8">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-yellow-500 flex items-center justify-center shadow-[0_0_50px_rgba(234,179,8,0.3)] group-hover:scale-110 transition-transform duration-500">
-                  <Mic className="text-black" size={32} />
-                </div>
-                <div>
-                  <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic uppercase leading-none">Vocal Identity</h3>
-                  <p className="text-zinc-500 text-[10px] md:text-xs uppercase tracking-[0.3em] mt-2 opacity-60">Smart Engine V2.1</p>
-                </div>
-              </div>
-              <p className="text-zinc-400 text-lg md:text-xl leading-relaxed mb-10 max-w-lg">
-                Our app learns how you talk and gives you personal tips that feel natural and easy to follow.
-              </p>
-              <button className="text-yellow-500 font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:gap-4 transition-all">
-                LEARN MORE <ArrowRight size={18} />
-              </button>
-            </div>
-            {/* Visual background */}
-            <div className="absolute -right-20 -bottom-20 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-1000 pointer-events-none">
-              <Dna size={500} />
-            </div>
-          </div>
-
-          {/* Side Feature 1 */}
-          <div
-            
-            className="md:col-span-5 bg-white rounded-[4rem] p-12 text-black flex flex-col justify-between  "
-          >
-            <div className="flex justify-between items-start">
-              <Fingerprint size={48} strokeWidth={2.5} />
-              <div className="bg-black text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Secure</div>
-            </div>
-            <div>
-              <h3 className="text-4xl font-black tracking-tighter mb-4 italic">Unrivaled Privacy.</h3>
-              <p className="font-bold opacity-80 leading-snug">All processing happens in an isolated enclave. Your voice is yours alone. Period.</p>
-            </div>
-          </div>
-
-          {/* Small Bento 1 */}
-          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:bg-zinc-800 transition-colors">
-            <BarChart3 className="text-yellow-500 mb-6" size={32} />
-            <h4 className="text-xl font-black mb-2 uppercase italic">Micro-Analytics</h4>
-            <p className="text-zinc-500 text-sm">Every pause, every breath, every 'um' analyzed to the millisecond.</p>
-          </div>
-
-          {/* Small Bento 2 */}
-          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:bg-zinc-800 transition-colors">
-            <Layers className="text-yellow-500 mb-6" size={32} />
-            <h4 className="text-xl font-black mb-2 uppercase italic">Multi-Modal</h4>
-            <p className="text-zinc-500 text-sm">Switch between speech, debate, and interview modes instantly.</p>
-          </div>
-
-          {/* Small Bento 3 */}
-          <div className="md:col-span-4 bg-zinc-900 border border-white/5 rounded-[3rem] p-10 hover:bg-zinc-800 transition-colors">
-            <Sparkles className="text-yellow-500 mb-6" size={32} />
-            <h4 className="text-xl font-black mb-2 uppercase italic">AI Persona</h4>
-            <p className="text-zinc-500 text-sm">Practice against challenging AI personas that simulate real high-stakes environments.</p>
-          </div>
-
-        </div>
-      </section>
 
       {/* --- SHOWCASE: REAL-TIME FEEDBACK --- */}
       <section className="py-32 px-6 bg-[#080808]">
@@ -414,7 +354,14 @@ function HomeContent() {
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center pt-10 border-t border-white/5 gap-8">
-            <p className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.5em]">©2026 REVIAL LABS INC.</p>
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+              <p className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.5em]">©2026 REVIAL LABS INC.</p>
+              <div className="hidden md:block w-[1px] h-3 bg-white/10" />
+              <p className="text-yellow-500/60 font-black text-[10px] uppercase tracking-[0.5em] flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500/40" />
+                Founder: Ahsan Imam Khan
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">System Status: All Engines Nominal</span>

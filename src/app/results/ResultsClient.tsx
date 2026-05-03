@@ -39,6 +39,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/components/auth-provider";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { computeSessionAnalytics } from "@/lib/session-analytics";
 
 interface FeedbackData {
   confidence_score: number;
@@ -183,13 +184,25 @@ export default function ResultsClient() {
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
 
+          // Compute analytics from transcript & AI scores (non-destructive extension)
+          const analytics = computeSessionAnalytics(transcript || "", 60);
+
           await addDoc(collection(db, "users", user.uid, "sessions"), {
             prompt,
             transcript,
             feedback,
             timestamp: serverTimestamp(),
             brutalMode,
-            isRapidFire
+            isRapidFire,
+            // Extended fields for analytics (new, additive only)
+            scores: {
+              confidence_score: feedback.confidence_score ?? 0,
+              clarity_score: feedback.clarity_score ?? 0,
+              fluency_score: feedback.fluency_score ?? 0,
+              tone_score: feedback.tone_score ?? 0,
+            },
+            fillers: analytics.fillers,
+            meta: analytics.meta,
           });
 
           const todayStr = new Date().toDateString();
@@ -288,7 +301,7 @@ export default function ResultsClient() {
               className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg"
             >
               <LayoutGrid className="w-5 h-5" />
-              GO TO DASHBOARD
+              MENU
             </button>
             <button 
               onClick={downloadPDF}
@@ -301,26 +314,6 @@ export default function ResultsClient() {
           
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <div className="flex items-center gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border ">
-               <button 
-                onClick={() => setBrutalMode(false)}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold transition-all",
-                  !brutalMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Normal
-              </button>
-              <button 
-                onClick={() => setBrutalMode(true)}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2",
-                  brutalMode ? "bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Strict
-              </button>
-            </div>
           </div>
         </div>
 
