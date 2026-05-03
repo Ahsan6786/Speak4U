@@ -175,7 +175,7 @@ export default function RoomsPage() {
             )}>
               {isMine ? (
                 <div className="flex items-center gap-2 mb-1 mr-1">
-                  {memberInfo[user.uid]?.streak !== undefined && memberInfo[user.uid].streak > 0 && (
+                  {user?.uid && memberInfo[user.uid]?.streak !== undefined && memberInfo[user.uid].streak > 0 && (
                     <div className="flex items-center gap-0.5 bg-orange-500/10 px-1.5 py-0.5 rounded-full border border-orange-500/10">
                       <Flame className="w-2.5 h-2.5 text-orange-500 fill-current" />
                       <span className="text-[9px] font-black text-orange-500">{memberInfo[user.uid].streak}</span>
