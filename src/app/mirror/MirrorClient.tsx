@@ -40,13 +40,30 @@ export default function MirrorClient() {
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [showExitModal, setShowExitModal] = useState(false);
 
-  // Initialize Camera
+  const stopCamera = useCallback(() => {
+    setCameraActive(false);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        try {
+          track.stop();
+          track.enabled = false;
+        } catch (e) {}
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+      try { videoRef.current.load(); } catch (e) {}
+    }
+  }, []);
+
   const startCamera = useCallback(async () => {
     try {
+      stopCamera(); // Stop any previous stream
       setCameraError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: "user" },
-        audio: false // useVoiceRecorder handles audio
+        audio: false 
       });
       streamRef.current = stream;
       setCameraActive(true);
@@ -54,7 +71,7 @@ export default function MirrorClient() {
       console.error("Camera access error:", err);
       setCameraError("Camera access denied. Please check your permissions.");
     }
-  }, []);
+  }, [stopCamera]);
 
   // Set video source when active
   useEffect(() => {
@@ -63,61 +80,18 @@ export default function MirrorClient() {
     }
   }, [cameraActive]);
 
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setCameraActive(false);
-  }, []);
-
   useEffect(() => {
-    let activeStream: MediaStream | null = null;
-
-    async function init() {
-      if (!authLoading && !user) {
-        router.push("/");
-        return;
-      }
-
-      try {
-        setCameraError(null);
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "user" },
-          audio: false 
-        });
-        activeStream = stream;
-        streamRef.current = stream;
-        setCameraActive(true);
-      } catch (err) {
-        console.error("Camera access error:", err);
-        setCameraError("Camera access denied. Please check your permissions.");
-      }
+    if (!authLoading && !user) {
+      router.push("/");
+      return;
     }
-
-    init();
+    
+    startCamera();
 
     return () => {
-      setCameraActive(false);
-      if (activeStream) {
-        activeStream.getTracks().forEach(track => {
-          track.stop();
-          track.enabled = false;
-        });
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => {
-          track.stop();
-          track.enabled = false;
-        });
-        streamRef.current = null;
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-        videoRef.current.load();
-      }
+      stopCamera();
     };
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, startCamera, stopCamera]);
 
   // Real-time Filler Detection
   useEffect(() => {
