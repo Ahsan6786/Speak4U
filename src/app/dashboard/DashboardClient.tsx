@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2, Command, Settings, User } from "lucide-react";
+import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2, Command, Settings, User, Users, Hash } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -12,6 +12,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/components/auth-provider";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, onSnapshot, collection, query, orderBy, limit, deleteDoc, increment } from "firebase/firestore";
+import { SignOutModal } from "@/components/sign-out-modal";
+import { SettingsModal } from "@/components/settings-modal";
 
 export default function DashboardClient() {
   const router = useRouter();
@@ -508,93 +510,25 @@ export default function DashboardClient() {
         )}
       </>
       <>
-      {/* Sign Out Confirmation Modal */}
-      {showSignOutConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-white dark:bg-zinc-950 border-2 border-border p-10 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.5)] max-w-md w-full text-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-primary" />
-            <div className="w-20 h-20 rounded-3xl bg-blue-500/10 text-blue-500 flex items-center justify-center mx-auto mb-8 shadow-inner">
-              <LogOut className="w-10 h-10" />
-            </div>
-            <h3 className="text-3xl font-black mb-3 tracking-tight italic">SIGN OUT?</h3>
-            <p className="text-muted-foreground font-medium mb-10 italic">Your progress is safely stored. Are you sure you want to end your current session?</p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowSignOutConfirm(false)}
-                className="flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest bg-muted text-foreground hover:bg-muted/80 transition-all border border-border"
-              >
-                STAY HERE
-              </button>
-              <button
-                onClick={() => {
-                  logout();
-                  router.push("/");
-                }}
-                className="flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"
-              >
-                EXIT NOW
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SignOutModal 
+        isOpen={showSignOutConfirm}
+        onClose={() => setShowSignOutConfirm(false)}
+        onConfirm={() => {
+          logout();
+          router.push("/");
+        }}
+      />
 
-      {/* Profile Settings Modal */}
-      {showSettings && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-white dark:bg-zinc-950 border-2 border-border p-10 rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.5)] max-w-lg w-full relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-primary" />
-            
-            <div className="flex items-center gap-6 mb-10">
-               <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 flex items-center justify-center flex-shrink-0">
-                 <User className="w-8 h-8" />
-               </div>
-               <div>
-                 <h3 className="text-3xl font-black tracking-tight italic leading-none">PROFILE</h3>
-                 <p className="text-muted-foreground text-sm font-medium mt-1 uppercase tracking-widest opacity-60">Management Console</p>
-               </div>
-            </div>
-
-            <div className="space-y-8 mb-12">
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4 block">Identity Label</label>
-                <div className="relative group">
-                  <input
-                    type="text"
-                    value={newUserName}
-                    onChange={(e) => setNewUserName(e.target.value)}
-                    className="w-full bg-muted/50 border-2 border-border px-8 py-5 rounded-[1.5rem] font-black text-xl text-foreground outline-none focus:border-primary focus:bg-muted transition-all shadow-inner"
-                    placeholder="Enter your name"
-                  />
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 text-primary opacity-0 group-focus-within:opacity-100 transition-opacity">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest bg-muted text-foreground hover:bg-muted/80 transition-all border border-border"
-              >
-                CANCEL
-              </button>
-              <button
-                onClick={async () => {
-                  if (user) {
-                    await setDoc(doc(db, "users", user.uid), { name: newUserName }, { merge: true });
-                    setShowSettings(false);
-                  }
-                }}
-                className="flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest bg-primary text-white hover:bg-primary/90 transition-all shadow-xl shadow-primary/30"
-              >
-                SAVE AUDIT
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        userName={userName}
+        onSave={async (newName) => {
+          if (user) {
+            await setDoc(doc(db, "users", user.uid), { name: newName }, { merge: true });
+          }
+        }}
+      />
       </>
 
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10  rounded-full -mr-64 -mt-64 pointer-events-none opacity-50"></div>
@@ -607,13 +541,23 @@ export default function DashboardClient() {
             <button
               onClick={() => {
                 if (isRecording) stopRecording();
-                view === "practice" ? setView("history") : router.push("/");
+                view === "practice" ? setView("history") : router.push("/?stay=true");
               }}
               className="w-12 h-12 rounded-full bg-emerald-500 border-2 border-emerald-600 flex items-center justify-center text-white hover:bg-emerald-600 transition-all hover:scale-105 shadow-lg shadow-emerald-500/20"
               title="Menu"
             >
               <LayoutGrid className="w-5 h-5" />
             </button>
+
+            {/* Friends Navigation */}
+            <Link
+              href="/friends"
+              className="w-12 h-12 rounded-full bg-purple-500 border-2 border-purple-600 flex items-center justify-center text-white hover:bg-purple-600 transition-all hover:scale-105 shadow-lg shadow-purple-500/20"
+              title="Friends"
+            >
+              <MessageSquare className="w-5 h-5" />
+            </Link>
+
             <ThemeToggle />
             <button
               onClick={() => {
@@ -624,16 +568,6 @@ export default function DashboardClient() {
               title="Settings"
             >
               <Settings className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => {
-                if (isRecording) stopRecording();
-                setShowSignOutConfirm(true);
-              }}
-              className="w-12 h-12 rounded-full bg-blue-500 border-2 border-blue-600 flex items-center justify-center text-white hover:bg-blue-600 transition-all hover:scale-105 shadow-lg shadow-blue-500/20"
-              title="Sign Out"
-            >
-              <LogOut className="w-5 h-5" />
             </button>
           </div>
 
@@ -749,6 +683,60 @@ export default function DashboardClient() {
                   </div>
                   <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-emerald-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all">
                     VIEW REPORTS <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </Link>
+
+                {/* PEOPLE - DISCOVERY */}
+                <Link
+                  href="/community"
+                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-yellow-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden translate-z-0"
+                >
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(234,179,8,0.12)_0%,transparent_50%)] pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-yellow-500/10 rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none" />
+
+                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-yellow-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-[0_0_30px_rgba(234,179,8,0.4)]">
+                    <Users className="w-7 h-7" />
+                  </div>
+
+                  <div className="relative z-10 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-[1.5px] bg-yellow-500 rounded-full" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-yellow-500"></span>
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">DISCOVER <br /> PEOPLE</h3>
+                    <p className="text-sm md:text-base text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
+                      Find and <span className="text-yellow-500 font-bold">connect</span> with other rising voices.
+                    </p>
+                  </div>
+                  <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-yellow-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-yellow-500/30 hover:scale-105 transition-all">
+                    DISCOVER <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </Link>
+
+                {/* PUBLIC LOUNGE - SIMPLIFIED */}
+                <Link
+                  href="/rooms"
+                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-indigo-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden translate-z-0"
+                >
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.12)_0%,transparent_50%)] pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none" />
+
+                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-indigo-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-500 shadow-[0_0_30px_rgba(99,102,241,0.4)]">
+                    <Users className="w-7 h-7" />
+                  </div>
+
+                  <div className="relative z-10 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-[1.5px] bg-indigo-500 rounded-full" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-indigo-500"></span>
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">PUBLIC <br /> LOUNGE</h3>
+                    <p className="text-sm md:text-base text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
+                      Join the <span className="text-indigo-500 font-bold">global conversation</span> with all speakers.
+                    </p>
+                  </div>
+                  <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-indigo-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-indigo-500/30 hover:scale-105 transition-all">
+                    ENTER LOUNGE <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </Link>
               </div>

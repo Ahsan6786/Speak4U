@@ -91,12 +91,35 @@ export default function ReportsClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse">
-            <History className="w-6 h-6 text-primary" />
+      <div className="min-h-screen bg-background text-foreground p-6 md:p-12 relative overflow-hidden">
+        <div className="max-w-6xl mx-auto relative z-10 space-y-20">
+          {/* Header Skeleton */}
+          <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-10">
+            <div className="space-y-6 w-full lg:w-auto">
+              <div className="w-32 h-10 bg-muted animate-pulse rounded-full" />
+              <div className="space-y-4">
+                <div className="w-64 h-20 bg-muted animate-pulse rounded-3xl" />
+                <div className="w-96 h-6 bg-muted animate-pulse rounded-xl" />
+              </div>
+            </div>
+            <div className="w-full lg:w-96 h-16 bg-muted animate-pulse rounded-[2rem]" />
           </div>
-          <p className="text-sm font-black uppercase tracking-widest text-primary/50">Loading History...</p>
+
+          {/* Grid Skeleton */}
+          <div className="grid grid-cols-1 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="p-8 md:p-10 rounded-[2.5rem] bg-card/30 border-2 border-border flex flex-col md:flex-row justify-between gap-8 animate-pulse">
+                <div className="flex-1 space-y-6">
+                  <div className="w-32 h-4 bg-muted rounded-full" />
+                  <div className="space-y-4">
+                    <div className="w-3/4 h-8 bg-muted rounded-xl" />
+                    <div className="w-full h-12 bg-muted rounded-xl" />
+                  </div>
+                </div>
+                <div className="w-32 h-32 bg-muted rounded-3xl shrink-0" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );

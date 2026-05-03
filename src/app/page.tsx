@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   Mic, Shield, TrendingUp, LogOut, ArrowRight,
@@ -11,6 +12,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { AuthModal } from "@/components/auth-modal";
+import { SignOutModal } from "@/components/sign-out-modal";
+import { cn } from "@/lib/utils";
 
 
 const MobileDemo = () => {
@@ -55,8 +58,12 @@ const MobileDemo = () => {
 
 // --- MAIN COMPONENT ---
 export default function Home() {
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const stay = searchParams.get("stay");
+  const { user, loading, logout } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -64,6 +71,12 @@ export default function Home() {
     setMounted(true);
   }, []);
 
+
+  useEffect(() => {
+    if (mounted && !loading && user && !stay) {
+      router.push("/dashboard");
+    }
+  }, [user, loading, mounted, router, stay]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -76,6 +89,14 @@ export default function Home() {
 
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <SignOutModal 
+        isOpen={isSignOutModalOpen} 
+        onClose={() => setIsSignOutModalOpen(false)} 
+        onConfirm={() => {
+          logout();
+          setIsSignOutModalOpen(false);
+        }} 
+      />
 
       {/* --- NAVIGATION --- */}
       <nav className="absolute top-0 w-full z-[100] py-6 md:py-10">
@@ -97,7 +118,7 @@ export default function Home() {
               ) : (
                 <div className="flex items-center gap-4">
                   <Link href="/dashboard" className="text-sm font-black uppercase bg-white text-black px-8 py-3 rounded-full hover:bg-zinc-200 transition-all shadow-lg shadow-white/20">Dashboard</Link>
-                  <button onClick={logout} className="text-zinc-500 hover:text-white"><LogOut size={24} /></button>
+                  <button onClick={() => setIsSignOutModalOpen(true)} className="text-zinc-500 hover:text-white"><LogOut size={24} /></button>
                 </div>
               )}
             </div>
@@ -114,15 +135,14 @@ export default function Home() {
               <span className="text-yellow-500 font-black text-xs uppercase tracking-[0.4em]"></span>
             </div>
 
-            <h1 className="text-5xl md:text-[110px] font-black leading-[0.85] tracking-tighter mb-8 md:mb-10">
-              UNLEASH THE <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-white">DOMINANT</span><br />
-              VOICE.
+            <h1 className="text-5xl md:text-[110px] font-black leading-[0.95] tracking-tight mb-8 md:mb-10 uppercase italic pr-8">
+              SPEAK WITH <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-white">POWER</span> AND <br />
+              CLARITY.
             </h1>
 
             <p className="text-zinc-400 text-xl md:text-2xl font-medium max-w-xl mb-12 leading-relaxed">
-              Proprietary neural algorithms that decode your vocal impact.
-              Refine tone, eliminate hesitation, and master any room.
+              Learn to talk like a leader. Fix your tone, stop saying "um", and make people listen every time you speak.
             </p>
 
             <div className="flex flex-wrap gap-6">
@@ -146,10 +166,23 @@ export default function Home() {
 
           {/* Hero Visual: The "Matrix" */}
           <div className="relative flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-[500px] aspect-square">
-              {/* Glass Card 1 */}
-              <div className="absolute top-0 right-0 w-4/5 h-4/5 bg-zinc-900/50  border border-white/10 rounded-[3rem] shadow-2xl transform rotate-3 z-10 translate-z-0 overflow-hidden">
-                <Image src="/logo.jpeg" alt="Logo" fill className="object-cover opacity-80" />
+            <div className="relative w-full max-w-[550px] aspect-square">
+              {/* Glowing Background Effect */}
+              <div className="absolute inset-0 bg-yellow-500/20 blur-[120px] rounded-full animate-pulse pointer-events-none" />
+              
+              {/* Card 2 (Bottom Layer) */}
+              <div className="absolute bottom-10 left-0 w-3/5 h-3/5 bg-zinc-900/40 backdrop-blur-3xl border border-white/10 rounded-[3rem] shadow-2xl transform -rotate-6 z-0 translate-z-0 flex items-center justify-center">
+                 <div className="w-1/2 h-[1px] bg-white/20" />
+              </div>
+
+              {/* Card 1 (Top Layer) */}
+              <div className="absolute top-0 right-0 w-4/5 h-4/5 bg-gradient-to-br from-zinc-900/80 to-black/80 backdrop-blur-2xl border border-white/20 rounded-[3rem] shadow-2xl transform rotate-3 z-10 translate-z-0 overflow-hidden group">
+                <Image src="/logo.jpeg" alt="Logo" fill className="object-cover opacity-60 group-hover:scale-110 transition-transform duration-1000" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+                <div className="absolute bottom-10 left-10 right-10">
+                  <div className="w-20 h-1 bg-yellow-500 mb-4" />
+                  <p className="text-white font-black italic uppercase tracking-widest text-xs">Vocal Analysis System</p>
+                </div>
               </div>
             </div>
           </div>
@@ -164,10 +197,10 @@ export default function Home() {
             className="order-2 lg:order-1"
           >
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-8 uppercase italic leading-[0.9]">
-              EXPERIENCE THE <span className="text-yellow-500 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">NEURAL</span> INTERFACE.
+              SEE HOW <span className="text-yellow-500 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">REVIAL</span> WORKS.
             </h2>
             <p className="text-zinc-400 text-xl md:text-2xl mb-12 leading-relaxed">
-              Witness the power of real-time vocal processing. From Bio-Metric IDs to millisecond filler-word detection, our interface is designed for the elite.
+              See your voice change in real-time. We help you find your best speaking style and show you how to improve instantly.
             </p>
             <div className="space-y-6">
               {[
@@ -214,35 +247,36 @@ export default function Home() {
       {/* --- FEATURES: BENTO GRID --- */}
       <section id="ecosystem" className="py-32 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-20">
-          <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase italic">Built for the <span className="text-yellow-500">Elite.</span></h2>
-          <p className="text-zinc-500 text-xl max-w-2xl mx-auto">We've spent 40,000 hours training our model on the world's most successful speeches.</p>
+          <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase italic">Built for <span className="text-yellow-500">Everyone.</span></h2>
+          <p className="text-zinc-500 text-xl max-w-2xl mx-auto">We studied thousands of great speeches to give you the best advice on how to talk better.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
           {/* Main Feature */}
           <div
-            className="md:col-span-7 bg-zinc-900/30  border border-white/5 rounded-[4rem] p-12 overflow-hidden relative group  "
+            className="md:col-span-7 bg-zinc-900/30 border border-white/5 rounded-[4rem] p-10 md:p-14 overflow-hidden relative group min-h-[400px] flex flex-col justify-center"
           >
-            <div className="flex flex-col items-center -mt-16">
-              {/* Neural Interface Indicator */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-20 h-20 rounded-3xl bg-yellow-500 flex items-center justify-center shadow-[0_0_50px_rgba(234,179,8,0.5)] hover:scale-110 transition-transform">
+            <div className="relative z-10">
+              <div className="flex items-center gap-6 mb-8">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-yellow-500 flex items-center justify-center shadow-[0_0_50px_rgba(234,179,8,0.3)] group-hover:scale-110 transition-transform duration-500">
                   <Mic className="text-black" size={32} />
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black tracking-tighter italic">Bio-Metric Vocal ID</h3>
-                  <p className="text-zinc-500 text-xs uppercase tracking-widest opacity-60">Neural Engine V2.1</p>
+                  <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic uppercase leading-none">Vocal Identity</h3>
+                  <p className="text-zinc-500 text-[10px] md:text-xs uppercase tracking-[0.3em] mt-2 opacity-60">Smart Engine V2.1</p>
                 </div>
               </div>
-              <p className="text-zinc-400 text-xl leading-relaxed mb-8">Our engine identifies your unique pitch baseline and resonance profile, ensuring that coaching feels natural, never robotic.</p>
-              <button className="text-yellow-500 font-bold flex items-center gap-2 transition-all">
+              <p className="text-zinc-400 text-lg md:text-xl leading-relaxed mb-10 max-w-lg">
+                Our app learns how you talk and gives you personal tips that feel natural and easy to follow.
+              </p>
+              <button className="text-yellow-500 font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:gap-4 transition-all">
                 LEARN MORE <ArrowRight size={18} />
               </button>
             </div>
             {/* Visual background */}
-            <div className="absolute right-0 bottom-0 opacity-10 transition-opacity">
-              <Dna size={400} />
+            <div className="absolute -right-20 -bottom-20 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-1000 pointer-events-none">
+              <Dna size={500} />
             </div>
           </div>
 
@@ -318,16 +352,15 @@ export default function Home() {
             <div className="w-full aspect-video bg-zinc-900 border-4 border-yellow-500 rounded-[2.5rem] p-4 relative overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.3)]">
               <div className="absolute inset-0 bg-black opacity-20 pointer-events-none z-10" />
               
-              {/* Brat Animation: High-Contrast Waveform */}
-              <div className="absolute inset-0 flex items-center justify-center gap-1 px-10">
-                {mounted && [...Array(40)].map((_, i) => (
+              <div className="absolute inset-0 flex items-center justify-center gap-1.5 px-10">
+                {mounted && [...Array(50)].map((_, i) => (
                   <div 
                     key={i}
-                    className="w-1 md:w-2 bg-yellow-500 rounded-full animate-brat-wave"
+                    className="w-[3px] md:w-[4px] bg-gradient-to-t from-yellow-600 via-yellow-400 to-yellow-600 rounded-full animate-voice-flow"
                     style={{ 
-                      height: `${Math.random() * 60 + 20}%`,
-                      animationDelay: `${i * 0.05}s`,
-                      boxShadow: '0 0 15px rgba(234, 179, 8, 0.5)'
+                      height: `${Math.random() * 70 + 10}%`,
+                      animationDelay: `${i * 0.04}s`,
+                      boxShadow: '0 0 10px rgba(234, 179, 8, 0.3)'
                     }}
                   />
                 ))}
@@ -394,14 +427,14 @@ export default function Home() {
       {scrolled && (
         <button 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-10 right-10 w-16 h-16 bg-yellow-500 text-black rounded-2xl flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all z-[200] group"
+          className="fixed bottom-10 right-10 w-16 h-16 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.2)] hover:scale-110 active:scale-95 transition-all z-[200] group"
         >
           <ArrowRight className="w-8 h-8 -rotate-90 group-hover:-translate-y-1 transition-transform" />
         </button>
       )}
 
-      {/* High-Impact Global Styles (Tailwind can handle most, but adding for fine-tuning) */}
-      <style jsx global>{`
+      {/* High-Impact Global Styles */}
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes subtle-spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -410,15 +443,15 @@ export default function Home() {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
         }
-        @keyframes brat-wave {
-          0%, 100% { transform: scaleY(1); opacity: 0.5; }
-          50% { transform: scaleY(2.5); opacity: 1; }
+        @keyframes voice-flow {
+          0%, 100% { transform: scaleY(1); opacity: 0.4; filter: blur(0.5px); }
+          50% { transform: scaleY(2.8); opacity: 1; filter: blur(0px); }
         }
         .animate-marquee {
-          animation: marquee 30s linear infinite;
+          animation: marquee 40s linear infinite;
         }
-        .animate-brat-wave {
-          animation: brat-wave 0.6s ease-in-out infinite;
+        .animate-voice-flow {
+          animation: voice-flow 0.8s ease-in-out infinite;
         }
         body {
           overscroll-behavior: none;
@@ -427,7 +460,7 @@ export default function Home() {
           background: #FFD700;
           color: black;
         }
-      `}</style>
+      `}} />
     </div>
   );
 }

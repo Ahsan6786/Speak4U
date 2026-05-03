@@ -7,11 +7,12 @@ import Image from "next/image";
 
 import { X, Mail, Lock, LogIn, ArrowRight } from "lucide-react";
 import { useAuth } from "./auth-provider";
+import { cn } from "@/lib/utils";
 
 export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const { loginWithGoogle, loginWithEmail, signupWithEmail } = useAuth();
+  const { loginWithGoogle, loginWithApple, loginWithEmail, signupWithEmail, resetPassword } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -81,55 +82,81 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           />
 
           <div
-            
-            
-            
-            
-            className="relative w-full max-w-md bg-black border border-zinc-800 rounded-[2.5rem] p-8 md:p-10 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] transform-gpu will-change-transform"
+            className="relative w-full max-w-md bg-background border border-border rounded-[2.5rem] p-8 md:p-10 overflow-hidden shadow-2xl"
           >
             <div className="absolute top-0 right-0 p-6">
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-zinc-800 transition-colors">
-                <X className="w-5 h-5 text-zinc-400" />
+              <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="flex flex-col items-center text-center mb-8">
               <img src="/splash.png" alt="REVIAL Logo" className="w-32 h-32 object-contain mb-2" />
-              <h2 className="text-3xl font-black tracking-tight text-white">
+              <h2 className="text-3xl font-black tracking-tight text-foreground uppercase italic">
                 {isLogin ? "Welcome Back." : "Create Account."}
               </h2>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 mb-8">
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="email"
                   placeholder="Email Address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#111111] border border-zinc-800 text-white placeholder:text-zinc-500 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
+                  className="w-full bg-muted border border-border text-foreground placeholder:text-muted-foreground rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/50 outline-none transition-all"
                   required
                 />
               </div>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="password"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#111111] border border-zinc-800 text-white placeholder:text-zinc-500 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
-                  required
+                  className="w-full bg-muted border border-border text-foreground placeholder:text-muted-foreground rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                  required={isLogin}
                 />
               </div>
 
-              {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
+              {isLogin && (
+                <div className="flex justify-end pr-2">
+                  <button 
+                    type="button"
+                    onClick={async () => {
+                      if (!email) {
+                        setError("Please enter your email first.");
+                        return;
+                      }
+                      try {
+                        await resetPassword(email);
+                        setError("Success: Password reset email sent! Check your spam folder and mark it as 'Not Spam' for the link to work.");
+                      } catch (err: any) {
+                        setError(err.message);
+                      }
+                    }}
+                    className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+
+              {error && (
+                <p className={cn(
+                  "text-sm font-medium text-center",
+                  error.includes("Success") ? "text-emerald-500" : "text-red-500"
+                )}>
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-white hover:bg-zinc-100 py-4 rounded-full text-black font-black flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg"
+                className="w-full bg-foreground text-background hover:opacity-90 py-4 rounded-full font-black flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg uppercase tracking-widest text-xs"
               >
                 {loading ? "PROCESSING..." : isLogin ? "SIGN IN" : "CONTINUE"}
                 <ArrowRight className="w-5 h-5" />
@@ -138,27 +165,49 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
             <div className="relative mb-8">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-zinc-800"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase tracking-widest font-black">
-                <span className="bg-black px-4 text-zinc-500">OR</span>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-[0.3em] font-black">
+                <span className="bg-background px-4 text-muted-foreground">OR</span>
               </div>
             </div>
 
-            <button
-              onClick={handleGoogle}
-              disabled={loading}
-              className="w-full py-4 rounded-full border border-zinc-700 bg-white hover:bg-zinc-100 text-black font-black text-[15px] flex items-center justify-center gap-4 transition-all disabled:opacity-50"
-            >
-              <Image src="/google.png" alt="Google" width={32} height={32} className="mr-1" />
-              {isLogin ? "Sign in with Google" : "Sign up with Google"}
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={handleGoogle}
+                disabled={loading}
+                className="w-full py-4 rounded-full border border-border bg-background hover:bg-muted text-foreground font-black text-xs uppercase tracking-widest flex items-center justify-center gap-4 transition-all disabled:opacity-50"
+              >
+                <Image src="/google.png" alt="Google" width={24} height={24} className="mr-1" />
+                {isLogin ? "Sign in with Google" : "Sign up with Google"}
+              </button>
 
-            <p className="mt-8 text-center text-sm text-zinc-400 font-medium">
+              <button
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    await loginWithApple();
+                    onClose();
+                    router.push("/dashboard");
+                  } catch (err: any) {
+                    setError(err.message);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="w-full py-4 rounded-full border border-border bg-background hover:bg-muted text-foreground font-black text-xs uppercase tracking-widest flex items-center justify-center gap-4 transition-all disabled:opacity-50"
+              >
+                <Image src="/apple.png" alt="Apple" width={24} height={24} className="mr-1" />
+                {isLogin ? "Sign in with Apple" : "Sign up with Apple"}
+              </button>
+            </div>
+
+            <p className="mt-8 text-center text-sm text-muted-foreground font-medium">
               {isLogin ? "New to REVIAL?" : "Already have an account?"}{" "}
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-white font-black hover:text-blue-400 transition-colors"
+                className="text-foreground font-black hover:text-primary transition-colors"
               >
                 {isLogin ? "Sign Up" : "Sign In"}
               </button>

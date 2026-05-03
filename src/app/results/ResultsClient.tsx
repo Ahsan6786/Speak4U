@@ -244,20 +244,36 @@ export default function ResultsClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground">
-        <div className="relative">
-          <div className="w-32 h-32 rounded-[2.5rem] border-2 border-primary/20 flex items-center justify-center">
-            <div className="w-16 h-16 rounded-2xl blue-gradient blue-glow flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-white" />
+      <div className="min-h-screen bg-background text-foreground p-6 md:p-12 relative overflow-hidden">
+        <div className="max-w-6xl mx-auto space-y-20">
+          {/* Header Skeletons */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="w-48 h-12 bg-muted animate-pulse rounded-full" />
+            <div className="w-32 h-10 bg-muted animate-pulse rounded-2xl" />
+          </div>
+
+          {/* Score Circles Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-4">
+                <div className="w-24 h-24 md:w-40 md:h-40 rounded-full bg-muted animate-pulse" />
+                <div className="w-20 h-4 bg-muted animate-pulse rounded-full" />
+              </div>
+            ))}
+          </div>
+
+          {/* Main Content Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-8 space-y-10">
+              <div className="w-full h-64 bg-muted animate-pulse rounded-[3rem]" />
+              <div className="w-full h-80 bg-muted animate-pulse rounded-[3rem]" />
+            </div>
+            <div className="lg:col-span-4 space-y-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="w-full h-48 bg-muted animate-pulse rounded-[2rem]" />
+              ))}
             </div>
           </div>
-        </div>
-        <div className="mt-12 h-8 flex flex-col items-center justify-center">
-          <>
-            <div className="text-2xl font-bold tracking-tight text-center">
-              {LOADING_PHRASES[phraseIndex]}
-            </div>
-          </>
         </div>
       </div>
     );
