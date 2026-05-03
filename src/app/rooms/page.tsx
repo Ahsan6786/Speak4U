@@ -56,7 +56,7 @@ export default function RoomsPage() {
     );
 
     const unsub = onSnapshot(q, async (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
       setMessages(msgs);
 
       // Fetch missing member info
