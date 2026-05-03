@@ -97,13 +97,24 @@ export default function MirrorClient() {
     init();
 
     return () => {
+      setCameraActive(false);
       if (activeStream) {
-        activeStream.getTracks().forEach(track => track.stop());
+        activeStream.getTracks().forEach(track => {
+          track.stop();
+          track.enabled = false;
+        });
       }
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach(track => {
+          track.stop();
+          track.enabled = false;
+        });
+        streamRef.current = null;
       }
-      setCameraActive(false);
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current.load();
+      }
     };
   }, [user, authLoading, router]);
 

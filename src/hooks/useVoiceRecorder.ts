@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 export function useVoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
+  // ... rest of state ...
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+
+  useCleanupOnUnmount(recognitionRef, mediaRecorderRef);
 
   const startRecording = useCallback(() => {
     setTranscript("");
@@ -114,4 +117,23 @@ export function useVoiceRecorder() {
     clearTranscript,
     requestPermission,
   };
+}
+
+// Cleanup helper for hooks
+function useCleanupOnUnmount(recognitionRef: any, mediaRecorderRef: any) {
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+      if (mediaRecorderRef.current) {
+        try {
+          if (mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+          }
+          mediaRecorderRef.current.stream.getTracks().forEach((track: any) => track.stop());
+        } catch (e) {}
+      }
+    };
+  }, [recognitionRef, mediaRecorderRef]);
 }
