@@ -71,13 +71,41 @@ export default function MirrorClient() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/");
-      return;
+    let activeStream: MediaStream | null = null;
+
+    async function init() {
+      if (!authLoading && !user) {
+        router.push("/");
+        return;
+      }
+
+      try {
+        setCameraError(null);
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "user" },
+          audio: false 
+        });
+        activeStream = stream;
+        streamRef.current = stream;
+        setCameraActive(true);
+      } catch (err) {
+        console.error("Camera access error:", err);
+        setCameraError("Camera access denied. Please check your permissions.");
+      }
     }
-    startCamera();
-    return () => stopCamera();
-  }, [user, authLoading, router, startCamera, stopCamera]);
+
+    init();
+
+    return () => {
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      setCameraActive(false);
+    };
+  }, [user, authLoading, router]);
 
   // Real-time Filler Detection
   useEffect(() => {
