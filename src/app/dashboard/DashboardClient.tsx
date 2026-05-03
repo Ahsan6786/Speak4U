@@ -797,7 +797,7 @@ export default function DashboardClient() {
                         "{prompt}"
                       </h2>
                     )}
-                    <div className="flex items-center justify-between w-full mt-10 border-t border-border/50 pt-8">
+                    <div className="flex items-center justify-between w-full mt-4 border-t border-border/50 pt-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-primary/10 border border-primary/20"><Sparkles className="w-4 h-4 text-primary" /></div>
                         <span className="font-bold text-sm uppercase tracking-widest text-primary"></span>
@@ -819,9 +819,9 @@ export default function DashboardClient() {
                     
                     
                     
-                    className="min-h-[400px] flex flex-col items-center justify-center text-center px-4"
+                    className="min-h-[100px] flex flex-col items-center justify-center text-center px-4"
                   >
-                    <div className="relative mb-12">
+                    <div className="relative mb-4">
                       <div
                         
                         
@@ -835,7 +835,7 @@ export default function DashboardClient() {
                         className="absolute inset-0 border-4 border-primary rounded-full"
                       ></div>
                     </div>
-                    <p className="text-xl md:text-3xl font-bold text-foreground leading-tight max-w-4xl italic mb-12">
+                    <p className="text-xl md:text-3xl font-bold text-foreground leading-tight max-w-4xl italic mb-6">
                       {transcript || "Speak now. I am listening..."}
                     </p>
 
@@ -868,7 +868,7 @@ export default function DashboardClient() {
                 )}
               </>
 
-              <div className="flex flex-col items-center justify-center py-8">
+              <div className="flex flex-col items-center justify-center py-0">
                 <>
                   {isRecording ? (
                     <div
@@ -900,9 +900,7 @@ export default function DashboardClient() {
                   ) : (
                     <div
                       key="start"
-                      
-                      
-                      className="flex flex-col items-center gap-10"
+                      className="flex flex-col items-center gap-4"
                     >
                       {!transcript ? (
                         <button

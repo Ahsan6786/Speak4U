@@ -224,11 +224,11 @@ export default function ResultsClient() {
   }, [user, authLoading, router, brutalMode]);
 
   const LOADING_PHRASES = [
-    "Thinking about your words...",
-    "Finding ways to improve...",
-    "Measuring your confidence...",
-    "Checking your speed...",
-    "Almost ready..."
+    "Your journey to mastery is unfolding...",
+    "Each word brings you closer to clarity...",
+    "The AI is auditing your brilliance...",
+    "Transforming your speech into impact...",
+    "Almost ready to show you the path to elite communication..."
   ];
 
   const [phraseIndex, setPhraseIndex] = useState(0);
@@ -237,42 +237,41 @@ export default function ResultsClient() {
     if (loading) {
       const interval = setInterval(() => {
         setPhraseIndex((prev) => (prev + 1) % LOADING_PHRASES.length);
-      }, 2500);
+      }, 3000);
       return () => clearInterval(interval);
     }
   }, [loading]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-6 md:p-12 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto space-y-20">
-          {/* Header Skeletons */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="w-48 h-12 bg-muted animate-pulse rounded-full" />
-            <div className="w-32 h-10 bg-muted animate-pulse rounded-2xl" />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground px-6 relative overflow-hidden">
+        {/* Background Atmosphere */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] -ml-64 -mb-64 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center max-w-2xl text-center">
+          <div className="relative mb-16">
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] bg-card border-2 border-border flex items-center justify-center shadow-2xl relative overflow-hidden group">
+              <div className="absolute inset-0 bg-primary/10 animate-pulse" />
+              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-primary relative z-10 animate-bounce" />
+            </div>
+            {/* Pulsing Outer Ring */}
+            <div className="absolute -inset-4 border border-primary/20 rounded-[3rem] animate-ping opacity-20" />
           </div>
 
-          {/* Score Circles Skeleton */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-4">
-                <div className="w-24 h-24 md:w-40 md:h-40 rounded-full bg-muted animate-pulse" />
-                <div className="w-20 h-4 bg-muted animate-pulse rounded-full" />
-              </div>
-            ))}
-          </div>
+          <div className="space-y-6">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">AI Neuro-Analysis</span>
+            </div>
+            
+            <h2 className="text-3xl md:text-5xl font-black italic tracking-tighter leading-none min-h-[120px] md:min-h-[160px] flex items-center justify-center">
+              {LOADING_PHRASES[phraseIndex]}
+            </h2>
 
-          {/* Main Content Skeleton */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-8 space-y-10">
-              <div className="w-full h-64 bg-muted animate-pulse rounded-[3rem]" />
-              <div className="w-full h-80 bg-muted animate-pulse rounded-[3rem]" />
-            </div>
-            <div className="lg:col-span-4 space-y-6">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="w-full h-48 bg-muted animate-pulse rounded-[2rem]" />
-              ))}
-            </div>
+            <p className="text-muted-foreground/60 text-xs font-black uppercase tracking-[0.3em] animate-pulse">
+              Measuring Impact & Clarity
+            </p>
           </div>
         </div>
       </div>
