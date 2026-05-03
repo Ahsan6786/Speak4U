@@ -38,6 +38,7 @@ export default function MirrorClient() {
   const [lastFiller, setLastFiller] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [snapshot, setSnapshot] = useState<string | null>(null);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   // Initialize Camera
   const startCamera = useCallback(async () => {
@@ -228,9 +229,12 @@ export default function MirrorClient() {
       {/* Header */}
       <nav className="p-6 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-zinc-800 transition-all">
+          <button 
+            onClick={() => setShowExitModal(true)}
+            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-zinc-800 transition-all"
+          >
             <ArrowLeft size={20} />
-          </Link>
+          </button>
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Training Mode</p>
             <h1 className="text-xl font-black italic tracking-tighter uppercase">Mirror Mode</h1>
@@ -447,6 +451,54 @@ export default function MirrorClient() {
           </div>
         </div>
       </main>
+
+      {/* Exit Confirmation Modal */}
+      <AnimatePresence>
+        {showExitModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowExitModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-zinc-900 border border-white/10 rounded-[3rem] p-10 text-center shadow-2xl"
+            >
+              <div className="w-20 h-20 rounded-3xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-8">
+                <Camera size={40} />
+              </div>
+              <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-4">End Session?</h2>
+              <p className="text-zinc-400 mb-10 font-medium">
+                Your camera will be automatically closed and your current progress will be lost unless you've saved it.
+              </p>
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={() => {
+                    // Logic to ensure everything stops
+                    stopCamera();
+                    stopRecording();
+                    router.push("/dashboard");
+                  }}
+                  className="w-full py-5 rounded-full bg-red-500 text-white font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+                >
+                  YES, CLOSE CAMERA
+                </button>
+                <button 
+                  onClick={() => setShowExitModal(false)}
+                  className="w-full py-5 rounded-full bg-white/5 text-zinc-300 font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+                >
+                  KEEP PRACTICING
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
