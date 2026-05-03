@@ -60,7 +60,7 @@ export default function RoomsPage() {
       setMessages(msgs);
 
       // Fetch missing member info
-      const uniqueSenders = Array.from(new Set(msgs.map(m => m.senderId)));
+      const uniqueSenders = Array.from(new Set(msgs.map((m: any) => m.senderId)));
       const newMemberInfo = { ...memberInfo };
       let changed = false;
 

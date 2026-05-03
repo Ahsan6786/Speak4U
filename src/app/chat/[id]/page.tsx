@@ -60,7 +60,7 @@ export default function ChatPage() {
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[]);
     });
 
     return () => unsub();
