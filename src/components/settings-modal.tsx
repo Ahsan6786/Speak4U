@@ -93,14 +93,14 @@ export function SettingsModal({ isOpen, onClose, userName, onSave }: SettingsMod
               Cancel
             </button>
           </div>
+          <button 
+            onClick={onClose}
+            className="absolute top-0 right-0 p-2 text-muted-foreground hover:text-foreground transition-colors z-20"
+            aria-label="Close settings"
+          >
+            <X size={24} />
+          </button>
         </div>
-
-        <button 
-          onClick={onClose}
-          className="absolute top-8 right-8 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <X size={20} />
-        </button>
       </div>
     </div>
   );
