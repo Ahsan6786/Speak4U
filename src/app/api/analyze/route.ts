@@ -1,21 +1,26 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY is missing");
-}
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "GEMINI_API_KEY is missing from environment" }, { status: 500 });
+    }
+
     const { transcript, prompt, brutalMode, imageData } = await req.json();
 
     if (!transcript) {
       return NextResponse.json({ error: "No transcript provided" }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-flash-latest",
+      generationConfig: {
+        responseMimeType: "application/json",
+      }
+    });
 
     const systemPrompt = `
       You are a world-class elite communication coach for "REVIAL". 
@@ -24,7 +29,7 @@ export async function POST(req: Request) {
       
       CRITICAL INSTRUCTIONS:
       1. DO NOT use any markdown formatting (like **, _, #) in your strings. Use plain text only.
-      2. Use simple, plain, and clear language that anyone can understand. Avoid complex jargon.
+      2. Use simple, plain, and clear language.
       3. Be honest, direct, and elite. 
       4. INTENT & RELEVANCE: Analyze if the user actually answered the prompt.
       5. SPEECH RATE & FLOW: Analyze their implied speaking speed.
@@ -38,26 +43,26 @@ export async function POST(req: Request) {
 
       Return ONLY a valid JSON object with this exact structure:
       {
-        "confidence_score": number (0-100),
-        "clarity_score": number (0-100),
-        "fluency_score": number (0-100),
-        "tone_score": number (0-100),
-        "feedback_summary": "Plain text summary.",
-        "mistakes": ["Point 1", "Point 2"],
-        "improvement_tips": ["Tip 1", "Tip 2"],
-        "better_version": "High-impact rewrite.",
-        "tone_analysis": "e.g., Hesitant, Authoritative",
-        "expression_analysis": "Concise analysis of facial expressions and body language.",
+        "confidence_score": number,
+        "clarity_score": number,
+        "fluency_score": number,
+        "tone_score": number,
+        "feedback_summary": "string",
+        "mistakes": ["string"],
+        "improvement_tips": ["string"],
+        "better_version": "string",
+        "tone_analysis": "string",
+        "expression_analysis": "string",
         "filler_words_detected": number,
-        "pace_feedback": "Short comment.",
+        "pace_feedback": "string",
         "vocab_words": [
-          { "word": "Word 1", "meaning": "Meaning 1" }
+          { "word": "string", "meaning": "string" }
         ]
       }
     `;
 
     let result;
-    if (imageData) {
+    if (imageData && imageData.includes(",")) {
       const parts = [
         { text: systemPrompt },
         {
@@ -69,43 +74,37 @@ export async function POST(req: Request) {
       ];
       result = await model.generateContent({ contents: [{ role: "user", parts }] });
     } else {
-      result = await model.generateContent(systemPrompt);
+      result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: systemPrompt }] }]
+      });
     }
 
-    if (!result?.response) {
-      throw new Error("No response from Gemini");
+    const response = await result.response;
+    if (!response) {
+      throw new Error("Empty response from Gemini API");
     }
 
-    const text = result.response.text();
-
+    const text = response.text();
     let feedback;
 
     try {
       const cleaned = text.replace(/```json|```/g, "").trim();
       const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-
-      if (!jsonMatch) {
-        throw new Error("No JSON found in AI response");
-      }
-
-      feedback = JSON.parse(jsonMatch[0]);
-
-    } catch (err) {
-      console.error("JSON PARSE ERROR:", text);
-
+      feedback = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
+    } catch (parseError) {
+      console.error("Gemini JSON Parse Error:", text);
       return NextResponse.json({
-        error: "Invalid AI response",
-        raw: text
+        error: "AI returned invalid response format",
+        raw: text.substring(0, 500)
       }, { status: 500 });
     }
 
     return NextResponse.json(feedback);
 
   } catch (error: any) {
-    console.error("API ERROR:", error);
-
+    console.error("Gemini Route Error:", error);
     return NextResponse.json({
-      error: "Failed to analyze speech",
+      error: "Analysis failed",
       message: error.message
     }, { status: 500 });
   }

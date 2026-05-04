@@ -107,12 +107,12 @@ export function UserCard({ user, currentUserId, isFriend, hasPendingRequest: ini
 
 export function UserSkeleton() {
   return (
-    <div className="p-6 rounded-[2rem] bg-card/60 border border-white/5 shadow-xl animate-pulse">
+    <div className="p-6 rounded-[2rem] bg-card/60 border border-white/5 shadow-xl">
       <div className="flex flex-col items-center space-y-4">
-        <div className="w-20 h-20 rounded-2xl bg-muted" />
-        <div className="w-24 h-4 bg-muted rounded" />
-        <div className="w-32 h-3 bg-muted rounded" />
-        <div className="w-full h-10 bg-muted rounded-xl" />
+        <div className="w-20 h-20 rounded-2xl skeleton" />
+        <div className="w-24 h-4 rounded skeleton" />
+        <div className="w-32 h-3 rounded skeleton" />
+        <div className="w-full h-10 rounded-xl skeleton" />
       </div>
     </div>
   );

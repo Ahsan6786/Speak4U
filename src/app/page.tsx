@@ -115,7 +115,7 @@ function HomeContent() {
           <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? "bg-black/60  border border-white/5 p-4 rounded-2xl shadow-2xl" : ""
             }`}>
             <Link href="/" className="flex items-center">
-              <Image src="/splash.png" alt="Logo" width={320} height={100} className="w-auto h-16 md:h-32" priority />
+              <Image src="/splash.png" alt="Logo" width={320} height={100} className="w-auto h-12 md:h-32" priority />
             </Link>
 
             <div className="flex items-center gap-6">
@@ -138,7 +138,7 @@ function HomeContent() {
       </nav>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative h-screen flex flex-col items-center justify-center px-6 pt-48 md:pt-60 overflow-hidden">
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-56 pb-20 md:pt-60 overflow-hidden">
         
         <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-10 md:gap-20">
           <div className=" ">
@@ -157,26 +157,19 @@ function HomeContent() {
             </p>
 
             <div className="flex flex-wrap gap-6">
-              {!user ? (
+              {!user && (
                 <button 
                   onClick={() => setIsAuthModalOpen(true)} 
                   className="px-12 py-6 bg-white text-black font-black rounded-full flex items-center gap-3 hover:bg-zinc-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.1)] text-lg uppercase tracking-wider"
                 >
                   GET STARTED <MoveRight size={24} />
                 </button>
-              ) : (
-                <Link 
-                  href="/dashboard"
-                  className="px-12 py-6 bg-white text-black font-black rounded-full flex items-center gap-3 hover:bg-zinc-200 transition-all shadow-[0_0_50px_rgba(255,255,255,0.2)] text-lg uppercase tracking-wider"
-                >
-                  GO TO DASHBOARD <LayoutGrid size={24} />
-                </Link>
               )}
             </div>
           </div>
 
           {/* Hero Visual: The "Matrix" */}
-          <div className="relative flex justify-center lg:justify-end">
+          <div className="relative flex justify-center lg:justify-end -mt-24 md:-mt-32">
             <div className="relative w-full max-w-[550px] aspect-square">
               {/* Glowing Background Effect */}
               <div className="absolute inset-0 bg-yellow-500/20 blur-[120px] rounded-full animate-pulse pointer-events-none" />

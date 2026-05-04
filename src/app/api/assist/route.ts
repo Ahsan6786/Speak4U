@@ -1,64 +1,67 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY is missing");
-}
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ suggestions: ["Keep going...", "You're doing great!"] }, { status: 500 });
+    }
+
     const { transcript, prompt } = await req.json();
 
     if (!transcript) {
       return NextResponse.json({ suggestions: ["Start speaking to get suggestions..."] });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-flash-latest",
+      generationConfig: {
+        responseMimeType: "application/json",
+      }
+    });
 
     const systemPrompt = `
-      You are an expert vocal coach and debate mentor. 
-      The user is answering this question: "${prompt}"
-      So far, they have said: "${transcript}"
+      You are a helpful speaking coach. 
+      The user is answering: "${prompt}"
+      They said: "${transcript}"
 
-      Your task is to provide 3 'Topic Hints' or 'Expert Keywords' that the user should mention next to make their answer more sophisticated and complete.
-      Do NOT try to guess their next words. Instead, suggest high-value concepts or transition themes.
+      The user is stuck. Give 3 SHORT and SIMPLE 'Talk Points' in easy English to help them continue.
       
-      Example for a 'Challenge' question: ["Quantifiable Impact", "Personal Growth", "Specific Actions"]
-      Example for a 'Hobbies' question: ["Emotional Connection", "Time Management", "Future Aspirations"]
+      Rules:
+      1. Use ONLY simple, everyday English (no high-level words).
+      2. Keep phrases very short (3-5 words).
+      3. Make them very easy to understand and speak.
+      4. Focus on what they should say next.
 
-      Provide EXACTLY 3 suggestions. 
-      Keep each suggestion between 1 to 3 words maximum.
-      Do not output anything else. No quotes, no markdown, no conversational filler.
-      Format the output as a valid JSON array of strings.
+      Format: ["Simple Phrase 1", "Simple Phrase 2", "Simple Phrase 3"]
     `;
 
-    const result = await model.generateContent(systemPrompt);
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: systemPrompt }] }]
+    });
 
-    if (!result?.response) {
-      throw new Error("No response from Gemini");
+    const response = await result.response;
+    if (!response) {
+      throw new Error("Empty response from Gemini API");
     }
 
-    const text = result.response.text();
+    const text = response.text();
     let suggestions = [];
 
     try {
       const cleaned = text.replace(/```json|```/g, "").trim();
       const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        suggestions = JSON.parse(jsonMatch[0]);
-      } else {
-        suggestions = JSON.parse(cleaned);
-      }
+      suggestions = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
     } catch (parseError) {
-      console.error("Failed to parse assist JSON:", text);
+      console.error("Gemini JSON Parse Error:", text);
       suggestions = ["Keep going...", "Elaborate more...", "What happened next?"];
     }
 
     return NextResponse.json({ suggestions });
   } catch (error: any) {
-    console.error("Assist generation failed:", error);
+    console.error("Gemini Assist Error:", error);
     return NextResponse.json({ suggestions: ["Keep going...", "You're doing great!"] }, { status: 500 });
   }
 }

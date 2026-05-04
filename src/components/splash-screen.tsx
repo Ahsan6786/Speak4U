@@ -42,6 +42,7 @@ export function SplashScreen({ isVisible }: { isVisible: boolean }) {
               src="/splash.png"
               alt="REVIAL Logo"
               fill
+              sizes="(max-width: 768px) 256px, 384px"
               className="object-contain p-8"
               priority
             />

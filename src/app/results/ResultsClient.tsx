@@ -23,7 +23,8 @@ import {
   Share2,
   BookOpen,
   LayoutGrid,
-  Mic
+  Mic,
+  ArrowLeft
 } from "lucide-react";
 import { 
   Radar, 
@@ -296,6 +297,13 @@ export default function ResultsClient() {
       <div className="max-w-6xl mx-auto" id="results-content">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-16 print:hidden">
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => router.back()}
+              className="w-11 h-11 rounded-full bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all shadow-lg"
+              title="Go Back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <button 
               onClick={() => router.push("/dashboard")}
               className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg"

@@ -89,34 +89,33 @@ export default function ReportsClient() {
     s.transcript.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-6 md:p-12 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto relative z-10 space-y-20">
-          {/* Header Skeleton */}
+      <div className="min-h-screen bg-background p-6 md:p-12 space-y-12">
+        <div className="max-w-6xl mx-auto space-y-20">
           <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-10">
-            <div className="space-y-6 w-full lg:w-auto">
-              <div className="w-32 h-10 bg-muted animate-pulse rounded-full" />
+            <div className="space-y-6">
+              <div className="w-48 h-10 skeleton rounded-full" />
               <div className="space-y-4">
-                <div className="w-64 h-20 bg-muted animate-pulse rounded-3xl" />
-                <div className="w-96 h-6 bg-muted animate-pulse rounded-xl" />
+                <div className="w-64 h-20 skeleton rounded-3xl" />
+                <div className="w-96 h-6 skeleton rounded-xl" />
               </div>
             </div>
-            <div className="w-full lg:w-96 h-16 bg-muted animate-pulse rounded-[2rem]" />
+            <div className="w-full lg:w-96 h-16 skeleton rounded-[2rem]" />
           </div>
 
           {/* Grid Skeleton */}
           <div className="grid grid-cols-1 gap-6">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="p-8 md:p-10 rounded-[2.5rem] bg-card/30 border-2 border-border flex flex-col md:flex-row justify-between gap-8 animate-pulse">
+              <div key={i} className="p-8 md:p-10 rounded-[2.5rem] border-2 border-border flex flex-col md:flex-row justify-between gap-8">
                 <div className="flex-1 space-y-6">
-                  <div className="w-32 h-4 bg-muted rounded-full" />
+                  <div className="w-32 h-4 skeleton rounded-full" />
                   <div className="space-y-4">
-                    <div className="w-3/4 h-8 bg-muted rounded-xl" />
-                    <div className="w-full h-12 bg-muted rounded-xl" />
+                    <div className="w-3/4 h-8 skeleton rounded-xl" />
+                    <div className="w-full h-12 skeleton rounded-xl" />
                   </div>
                 </div>
-                <div className="w-32 h-32 bg-muted rounded-3xl shrink-0" />
+                <div className="w-32 h-32 skeleton rounded-3xl shrink-0" />
               </div>
             ))}
           </div>
@@ -164,8 +163,15 @@ export default function ReportsClient() {
         <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-10 mb-20">
           <div className="space-y-6 w-full lg:w-auto">
             <div className="flex items-center justify-between lg:justify-start gap-4">
+              <button 
+                onClick={() => router.back()}
+                className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all shadow-lg"
+                title="Go Back"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
               <Link href="/dashboard" className="inline-flex items-center gap-3 bg-white text-black hover:bg-zinc-200 transition-all group px-4 py-2 rounded-full shadow-lg">
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                <LayoutGrid className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Dashboard</span>
               </Link>
               <ThemeToggle />

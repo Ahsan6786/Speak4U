@@ -81,13 +81,13 @@ export default function FriendsPage() {
       <div className="max-w-4xl mx-auto space-y-12">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Link
-            href="/dashboard"
+          <button
+            onClick={() => router.back()}
             className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-muted transition-all active:scale-95 shrink-0 shadow-sm"
-            title="Back to Dashboard"
+            title="Go Back"
           >
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           <ThemeToggle />
           <div className="space-y-1">
             <div className="flex items-center gap-2">

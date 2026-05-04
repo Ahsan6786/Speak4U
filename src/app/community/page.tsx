@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { useRouter } from "next/navigation";
 import { searchUsers, UserProfile, FriendRequest } from "@/lib/social";
 import { UserCard, UserSkeleton } from "@/components/UserCard";
 import { LayoutGrid, Search, Users, ArrowLeft } from "lucide-react";
@@ -11,6 +12,7 @@ import { db } from "@/lib/firebase";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function CommunityPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -67,13 +69,13 @@ export default function CommunityPage() {
         {/* Header */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center lg:justify-between gap-8">
           <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
+            <button
+              onClick={() => router.back()}
               className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-muted transition-all active:scale-95 shrink-0 shadow-sm"
-              title="Back to Dashboard"
+              title="Go Back"
             >
               <ArrowLeft className="w-5 h-5" />
-            </Link>
+            </button>
             <ThemeToggle />
             <div className="space-y-1">
               <div className="flex items-center gap-2">

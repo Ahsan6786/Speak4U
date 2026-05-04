@@ -1,13 +1,26 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "GEMINI_API_KEY is missing from environment" }, { status: 500 });
+    }
+
     const { answers, brutalMode } = await req.json();
 
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    if (!answers || !Array.isArray(answers)) {
+      return NextResponse.json({ error: "No answers provided" }, { status: 400 });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-flash-latest",
+      generationConfig: {
+        responseMimeType: "application/json",
+      }
+    });
 
     const systemPrompt = `
       You are an elite vocal coach at REVIAL. The user just completed a 'Rapid Fire' speaking drill consisting of 6 consecutive questions.
@@ -17,34 +30,57 @@ export async function POST(req: Request) {
 
       Your task is to provide a comprehensive, high-performance analysis of the ENTIRE drill.
       
-      ${brutalMode ? "STRICT MODE: Be extremely critical, honest, and direct. Focus on even minor flaws in delivery and logic." : "NORMAL MODE: Be encouraging but professional and constructive."}
+      ${brutalMode ? "STRICT MODE: Be extremely critical, honest, and direct." : "NORMAL MODE: Be professional and constructive."}
 
       Output EXACTLY in this JSON format:
       {
-        "confidence_score": number, (0-100)
-        "clarity_score": number, (0-100)
-        "fluency_score": number, (0-100)
-        "tone_score": number, (0-100)
-        "feedback_summary": "High-level summary of their overall communication style across all 6 answers",
-        "mistakes": ["specific mistake in answer 1", "structural issue in answer 2", etc],
-        "improvement_tips": ["actionable tip 1", "actionable tip 2", "actionable tip 3"],
-        "better_version": "A premium, polished version of their best answer from the round",
-        "tone_analysis": "Energy level and presence analysis",
+        "confidence_score": number,
+        "clarity_score": number,
+        "fluency_score": number,
+        "tone_score": number,
+        "feedback_summary": "string",
+        "mistakes": ["string"],
+        "improvement_tips": ["string"],
+        "better_version": "string",
+        "tone_analysis": "string",
         "filler_words_detected": number,
-        "pace_feedback": "Analysis of their speaking speed",
+        "pace_feedback": "string",
         "vocab_words": [{"word": "string", "meaning": "string"}],
-        "per_answer_summaries": ["Answer 1 summary", "Answer 2 summary", "Answer 3 summary", "Answer 4 summary", "Answer 5 summary", "Answer 6 summary"],
-        "ideal_answers": ["Professional Redelivery for Q1", "Professional Redelivery for Q2", "Professional Redelivery for Q3", "Professional Redelivery for Q4", "Professional Redelivery for Q5", "Professional Redelivery for Q6"]
+        "per_answer_summaries": ["string", "string", "string", "string", "string", "string"],
+        "ideal_answers": ["string", "string", "string", "string", "string", "string"]
       }
     `;
 
-    const result = await model.generateContent(systemPrompt);
-    const text = result.response.text();
-    const cleaned = text.replace(/```json|```/g, "").trim();
-    
-    return NextResponse.json(JSON.parse(cleaned));
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: systemPrompt }] }]
+    });
+
+    const response = await result.response;
+    if (!response) {
+      throw new Error("Empty response from Gemini API");
+    }
+
+    const text = response.text();
+    let feedback;
+
+    try {
+      const cleaned = text.replace(/```json|```/g, "").trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      feedback = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
+    } catch (parseError) {
+      console.error("Gemini JSON Parse Error:", text);
+      return NextResponse.json({
+        error: "AI returned invalid response format",
+        raw: text.substring(0, 500)
+      }, { status: 500 });
+    }
+
+    return NextResponse.json(feedback);
   } catch (error: any) {
-    console.error("Rapid analysis failed:", error);
-    return NextResponse.json({ error: "Failed to analyze rapid fire" }, { status: 500 });
+    console.error("Gemini Analyze-Rapid Error:", error);
+    return NextResponse.json({ 
+      error: "Rapid analysis failed",
+      message: error.message
+    }, { status: 500 });
   }
 }

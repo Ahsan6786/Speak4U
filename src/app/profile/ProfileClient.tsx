@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   LayoutGrid, User, Flame, Clock, TrendingUp, TrendingDown,
   Minus, Mic, Calendar, BarChart2, ChevronRight, Sparkles,
-  MessageSquare, ArrowRight
+  MessageSquare, ArrowRight, ArrowLeft
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -39,11 +39,10 @@ interface Session {
     speaking_pace_wpm: number;
     duration_seconds: number;
   };
+  isRapidFire?: boolean;
+  answers?: any[];
   // Legacy support
-  feedback?: {
-    confidence_score?: number;
-    clarity_score?: number;
-  };
+  feedback?: any;
 }
 
 export default function ProfileClient() {
@@ -63,30 +62,28 @@ export default function ProfileClient() {
 
     const loadData = async () => {
       try {
-        // Fetch user profile
-        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const [userDoc, snap] = await Promise.all([
+          getDoc(doc(db, "users", user.uid)),
+          getDocs(query(
+            collection(db, "users", user.uid, "sessions"),
+            orderBy("timestamp", "desc"),
+            limit(50)
+          ))
+        ]);
+
         if (userDoc.exists()) {
           setUserName(userDoc.data().name || "");
         }
 
-        // Derive join date from Firebase Auth metadata
         if (user.metadata?.creationTime) {
           const d = new Date(user.metadata.creationTime);
           setJoinDate(d.toLocaleDateString("en-IN", { month: "long", year: "numeric" }));
         }
 
-        // Fetch sessions (up to 50 most recent)
-        const q = query(
-          collection(db, "users", user.uid, "sessions"),
-          orderBy("timestamp", "desc"),
-          limit(50)
-        );
-        const snap = await getDocs(q);
         const data: Session[] = snap.docs.map((d) => ({
           id: d.id,
           ...d.data(),
         } as Session));
-        // Sort ascending for charts
         setSessions([...data].reverse());
       } catch (err) {
         console.error("Profile load error:", err);
@@ -149,16 +146,16 @@ export default function ProfileClient() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-background p-6 md:p-12 space-y-8 animate-pulse">
-        <div className="h-16 w-48 rounded-full bg-muted" />
-        <div className="h-40 rounded-[2.5rem] bg-muted/40 border border-white/5" />
+      <div className="min-h-screen bg-background p-6 md:p-12 space-y-8">
+        <div className="h-16 w-48 rounded-full skeleton" />
+        <div className="h-40 rounded-[2.5rem] border border-white/5 skeleton" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 rounded-[2rem] bg-muted/30 border border-white/5" />
+            <div key={i} className="h-32 rounded-[2rem] border border-white/5 skeleton" />
           ))}
         </div>
-        <div className="h-80 rounded-[2.5rem] bg-muted/30 border border-white/5" />
-        <div className="h-64 rounded-[2.5rem] bg-muted/30 border border-white/5" />
+        <div className="h-80 rounded-[2.5rem] border border-white/5 skeleton" />
+        <div className="h-64 rounded-[2.5rem] border border-white/5 skeleton" />
       </div>
     );
   }
@@ -179,9 +176,17 @@ export default function ProfileClient() {
         {/* ── Header Nav ── */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.back()}
+              className="w-11 h-11 rounded-full bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all"
+              title="Go Back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <Link
               href="/dashboard"
               className="w-11 h-11 rounded-full bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all"
+              title="Dashboard"
             >
               <LayoutGrid className="w-5 h-5" />
             </Link>
@@ -382,6 +387,12 @@ export default function ProfileClient() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{totalSessions} total sessions</p>
                 </div>
               </div>
+              <Link 
+                href="/reports" 
+                className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline flex items-center gap-1"
+              >
+                View All <ChevronRight className="w-3 h-3" />
+              </Link>
             </div>
             <div className="space-y-3">
               {[...sessions].reverse().slice(0, 10).map((s, i) => {
@@ -394,7 +405,31 @@ export default function ProfileClient() {
                 return (
                   <div
                     key={s.id}
-                    className="flex items-center justify-between p-5 rounded-2xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all group"
+                    onClick={() => {
+                      if (s.isRapidFire) {
+                        sessionStorage.setItem("is_rapid_fire", "true");
+                        sessionStorage.setItem("rapid_fire_data", JSON.stringify(s.answers || []));
+                        sessionStorage.setItem("last_transcript", s.transcript || "Rapid Fire Session");
+                        sessionStorage.setItem("last_prompt", s.prompt || "Rapid Fire Drill");
+                        sessionStorage.setItem("last_result", JSON.stringify({
+                          transcript: s.transcript,
+                          prompt: s.prompt,
+                          data: s.feedback || s.scores
+                        }));
+                      } else {
+                        if (!s.transcript || !s.prompt) return;
+                        sessionStorage.setItem("is_rapid_fire", "false");
+                        sessionStorage.setItem("last_transcript", s.transcript);
+                        sessionStorage.setItem("last_prompt", s.prompt);
+                        sessionStorage.setItem("last_result", JSON.stringify({
+                          transcript: s.transcript,
+                          prompt: s.prompt,
+                          data: s.feedback || s.scores
+                        }));
+                      }
+                      router.push("/results");
+                    }}
+                    className="flex items-center justify-between p-5 rounded-2xl bg-muted/20 border border-border/50 hover:border-primary/50 hover:bg-muted/30 transition-all group cursor-pointer"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xs font-black text-muted-foreground">

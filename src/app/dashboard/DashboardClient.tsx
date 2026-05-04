@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2, Command, Settings, User, Users, Hash, Book, Camera } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flame, History, LayoutGrid, Mic, Play, RotateCcw, StopCircle, Trash2, ChevronRight, LogOut, Timer, Brain, Sparkles, Calendar, MessageSquare, Wand2, FastForward, CheckCircle2, Command, Settings, User, Users, Hash, Book, Camera } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -30,6 +30,7 @@ export default function DashboardClient() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [assistMode, setAssistMode] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [lastAssistTranscript, setLastAssistTranscript] = useState("");
   const [isFetchingAssist, setIsFetchingAssist] = useState(false);
   const [isFetchingQuestion, setIsFetchingQuestion] = useState(false);
   const [isRapidFire, setIsRapidFire] = useState(false);
@@ -212,7 +213,10 @@ export default function DashboardClient() {
   }, [isRecording, timeLeft]);
 
   useEffect(() => {
-    if (!isRecording || !assistMode || !transcript || transcript.length < 10) return;
+    if (!isRecording || !assistMode) return;
+    
+    // Don't refresh if the user hasn't said much more since the last suggestions
+    if (suggestions.length > 0 && Math.abs(transcript.length - lastAssistTranscript.length) < 60) return;
 
     const timeoutId = setTimeout(async () => {
       setIsFetchingAssist(true);
@@ -225,16 +229,17 @@ export default function DashboardClient() {
         const data = await response.json();
         if (data.suggestions) {
           setSuggestions(data.suggestions);
+          setLastAssistTranscript(transcript);
         }
       } catch (err) {
         console.error("Assist failed:", err);
       } finally {
         setIsFetchingAssist(false);
       }
-    }, 600);
+    }, 1200); // Wait for 1.2 seconds of silence before helping
 
     return () => clearTimeout(timeoutId);
-  }, [transcript, isRecording, assistMode, prompt]);
+  }, [transcript, isRecording, assistMode, prompt, suggestions.length, lastAssistTranscript.length]);
 
   const confirmDelete = async () => {
     if (!user || !sessionToDelete) return;
@@ -348,29 +353,29 @@ export default function DashboardClient() {
 
   if (authLoading || dataLoading) {
     return (
-      <div className="min-h-screen bg-background p-6 md:p-12 space-y-12 animate-pulse">
+      <div className="min-h-screen bg-background p-6 md:p-12 space-y-12">
         {/* Header Skeleton */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <div className="w-12 h-12 rounded-full bg-muted" />
+            <div className="w-12 h-12 rounded-full skeleton" />
             <div className="hidden md:flex gap-4">
-              <div className="w-12 h-12 rounded-full bg-muted" />
-              <div className="w-12 h-12 rounded-full bg-muted" />
-              <div className="w-12 h-12 rounded-full bg-muted" />
+              <div className="w-12 h-12 rounded-full skeleton" />
+              <div className="w-12 h-12 rounded-full skeleton" />
+              <div className="w-12 h-12 rounded-full skeleton" />
             </div>
           </div>
-          <div className="w-24 h-12 rounded-full bg-muted" />
+          <div className="w-24 h-12 rounded-full skeleton" />
         </div>
 
         {/* Hero Card Skeleton */}
-        <div className="w-full h-48 md:h-64 rounded-[2.5rem] bg-muted/40 border border-white/5" />
+        <div className="w-full h-48 md:h-64 rounded-[2.5rem] border border-white/5 skeleton" />
 
         {/* Grid Skeleton */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
-          <div className="h-64 rounded-[2.5rem] bg-muted/30 border border-white/5" />
-          <div className="h-64 rounded-[2.5rem] bg-muted/30 border border-white/5" />
-          <div className="h-64 rounded-[2.5rem] bg-muted/30 border border-white/5" />
-          <div className="h-64 rounded-[2.5rem] bg-muted/30 border border-white/5" />
+          <div className="h-64 rounded-[2.5rem] border border-white/5 skeleton" />
+          <div className="h-64 rounded-[2.5rem] border border-white/5 skeleton" />
+          <div className="h-64 rounded-[2.5rem] border border-white/5 skeleton" />
+          <div className="h-64 rounded-[2.5rem] border border-white/5 skeleton" />
         </div>
       </div>
     );
@@ -936,10 +941,10 @@ export default function DashboardClient() {
                                 {isFetchingAssist ? "AI Analysis..." : "Talk Points"}
                               </span>
                             </div>
-                            <div className="flex flex-wrap justify-center gap-2">
-                              {(suggestions.length > 0 ? suggestions : ["Loading..."]).map((sug, i) => (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+                              {(suggestions.length > 0 ? suggestions : ["Thinking of ways to help...", "Analyzing question...", "Preparing talk points..."]).map((sug, i) => (
                                 <div key={i}
-                                  className="px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs md:text-sm whitespace-nowrap"
+                                  className="px-5 py-3 rounded-2xl bg-primary/5 border border-primary/10 text-primary font-medium text-xs md:text-[13px] text-center leading-tight flex items-center justify-center min-h-[50px] shadow-sm"
                                 >
                                   {sug}
                                 </div>

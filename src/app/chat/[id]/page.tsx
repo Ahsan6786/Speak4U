@@ -92,13 +92,13 @@ export default function ChatPage() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/60 backdrop-blur-xl shrink-0">
         <div className="flex items-center gap-4">
-          <Link
-            href="/friends"
+          <button
+            onClick={() => router.back()}
             className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-muted transition-all active:scale-95 shrink-0 shadow-sm"
-            title="Back to Friends"
+            title="Go Back"
           >
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           
           {isLoading ? (
             <div className="flex items-center gap-3">
