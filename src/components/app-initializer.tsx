@@ -10,9 +10,18 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
   const [minTimePassed, setMinTimePassed] = useState(false);
 
   useEffect(() => {
+    // Check if splash was already shown in this session
+    const splashShown = sessionStorage.getItem("splash-shown");
+    if (splashShown) {
+      setShowSplash(false);
+      setMinTimePassed(true);
+      return;
+    }
+
     // Ensure splash is visible for at least 2 seconds for aesthetic impact
     const timer = setTimeout(() => {
       setMinTimePassed(true);
+      sessionStorage.setItem("splash-shown", "true");
     }, 2000);
 
     return () => clearTimeout(timer);

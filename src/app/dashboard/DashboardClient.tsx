@@ -43,7 +43,6 @@ export default function DashboardClient() {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [newUserName, setNewUserName] = useState("");
-  const [scrolled, setScrolled] = useState(false);
   const scrollPosRef = useRef<number>(0);
 
   // Scroll memory for view changes
@@ -61,13 +60,6 @@ export default function DashboardClient() {
     }
   }, [view]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 300);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const fetchNewQuestion = async (force = false) => {
     if (isFetchingQuestion && !force) return;
@@ -717,6 +709,33 @@ export default function DashboardClient() {
                   </div>
                 </Link>
 
+                {/* MIRROR MODE - NEW CARD */}
+                <Link
+                  href="/mirror"
+                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-pink-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden text-left"
+                >
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(236,72,153,0.12)_0%,transparent_50%)] pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-pink-500/10 rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none" />
+
+                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-pink-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-[0_0_30px_rgba(236,72,153,0.4)]">
+                    <Camera className="w-7 h-7" />
+                  </div>
+
+                  <div className="relative z-10 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-[1.5px] bg-pink-500 rounded-full" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-pink-500">Live Training</span>
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">MIRROR <br /> MODE</h3>
+                    <p className="text-sm md:text-base text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
+                      Watch yourself speak and <span className="text-pink-500 font-bold">master your body language</span>.
+                    </p>
+                  </div>
+                  <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-pink-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-pink-500/30 hover:scale-105 transition-all">
+                    START MIRROR <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </Link>
+
                 {/* PERFORMANCE PROFILE - GOD TIER */}
                 <Link
                   href="/profile"
@@ -799,33 +818,6 @@ export default function DashboardClient() {
                     LEARN WORDS <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </button>
-
-                {/* MIRROR MODE - NEW CARD */}
-                <Link
-                  href="/mirror"
-                  className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-pink-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden text-left"
-                >
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(236,72,153,0.12)_0%,transparent_50%)] pointer-events-none" />
-                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-pink-500/10 rounded-full translate-x-1/4 translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none" />
-
-                  <div className="relative z-10 w-14 h-14 rounded-2xl bg-pink-500 text-white flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-[0_0_30px_rgba(236,72,153,0.4)]">
-                    <Camera className="w-7 h-7" />
-                  </div>
-
-                  <div className="relative z-10 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-[1.5px] bg-pink-500 rounded-full" />
-                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-pink-500">Live Training</span>
-                    </div>
-                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter italic text-foreground leading-[0.9] uppercase">MIRROR <br /> MODE</h3>
-                    <p className="text-sm md:text-base text-muted-foreground font-medium italic opacity-80 group-hover:opacity-100 transition-opacity">
-                      Watch yourself speak and <span className="text-pink-500 font-bold">master your body language</span>.
-                    </p>
-                  </div>
-                  <div className="relative z-10 mt-8 flex items-center gap-2 px-6 py-2.5 rounded-full bg-pink-500 text-white font-black uppercase tracking-widest text-[9px] shadow-lg shadow-pink-500/30 hover:scale-105 transition-all">
-                    START MIRROR <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
-                </Link>
 
               </div>
             </div>
@@ -1036,15 +1028,6 @@ export default function DashboardClient() {
         </>
       </div>
 
-      {/* Scroll to Top Button */}
-      {scrolled && view !== "practice" && (
-        <button 
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-8 right-8 w-14 h-14 bg-foreground text-background rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all z-[200] group"
-        >
-          <ArrowRight className="w-6 h-6 -rotate-90 group-hover:-translate-y-1 transition-transform" />
-        </button>
-      )}
     </div>
   );
 }

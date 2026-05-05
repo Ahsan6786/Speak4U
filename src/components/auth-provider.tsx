@@ -40,13 +40,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      console.log("Initiating Google Login...");
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await signInWithPopup(auth, provider);
+      console.log("Google Login Success:", result.user.email);
+    } catch (error: any) {
+      console.error("Google Login Error:", error.code, error.message);
+      throw error;
+    }
   };
 
   const loginWithApple = async () => {
-    const provider = new OAuthProvider("apple.com");
-    await signInWithPopup(auth, provider);
+    try {
+      console.log("Initiating Apple Login...");
+      const provider = new OAuthProvider("apple.com");
+      const result = await signInWithPopup(auth, provider);
+      console.log("Apple Login Success:", result.user.email);
+    } catch (error: any) {
+      console.error("Apple Login Error:", error.code, error.message);
+      throw error;
+    }
   };
 
   const loginWithEmail = async (email: string, pass: string) => {

@@ -8,6 +8,7 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AuthProvider } from "@/components/auth-provider";
 import { InstallPrompt } from "@/components/install-prompt";
 import { AppInitializer } from "@/components/app-initializer";
+import { ScrollToTop } from "@/components/scroll-to-top";
 
 
 import type { Metadata, Viewport } from "next";
@@ -47,6 +48,7 @@ export default function RootLayout({
               <ThemeColorHandler />
               {children}
               <InstallPrompt />
+              <ScrollToTop />
             </AppInitializer>
           </AuthProvider>
         </NextThemesProvider>

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const { loginWithGoogle, loginWithApple, loginWithEmail, signupWithEmail, resetPassword } = useAuth();
+  const { loginWithGoogle, loginWithEmail, signupWithEmail, resetPassword } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,13 +54,21 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   };
 
   const handleGoogle = async () => {
+    setError("");
     setLoading(true);
     try {
       await loginWithGoogle();
       onClose();
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message);
+      console.error("AuthModal Google Error:", err);
+      if (err.code === "auth/operation-not-allowed") {
+        setError("Google login is not enabled in the Firebase Console.");
+      } else if (err.code === "auth/popup-closed-by-user") {
+        setError("Login popup was closed before completion.");
+      } else {
+        setError(err.message || "Failed to sign in with Google.");
+      }
     } finally {
       setLoading(false);
     }
@@ -180,26 +188,6 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               >
                 <Image src="/google.png" alt="Google" width={24} height={24} className="mr-1" />
                 {isLogin ? "Sign in with Google" : "Sign up with Google"}
-              </button>
-
-              <button
-                onClick={async () => {
-                  setLoading(true);
-                  try {
-                    await loginWithApple();
-                    onClose();
-                    router.push("/dashboard");
-                  } catch (err: any) {
-                    setError(err.message);
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                disabled={loading}
-                className="w-full py-4 rounded-full border border-border bg-background hover:bg-muted text-foreground font-black text-xs uppercase tracking-widest flex items-center justify-center gap-4 transition-all disabled:opacity-50"
-              >
-                <Image src="/apple.png" alt="Apple" width={24} height={24} className="mr-1" />
-                {isLogin ? "Sign in with Apple" : "Sign up with Apple"}
               </button>
             </div>
 

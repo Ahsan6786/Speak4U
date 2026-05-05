@@ -75,7 +75,6 @@ function HomeContent() {
   const { user, loading, logout } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -89,11 +88,7 @@ function HomeContent() {
     }
   }, [user, loading, mounted, router, stay]);
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
 
   return (
     <div className="relative min-h-screen bg-[#050505] text-zinc-100 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
@@ -112,12 +107,10 @@ function HomeContent() {
       {/* --- NAVIGATION --- */}
       <nav className="absolute top-0 w-full z-[100] py-6 md:py-10">
         <div className="max-w-[1400px] mx-auto px-6">
-          <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? "bg-black/60  border border-white/5 p-4 rounded-2xl shadow-2xl" : ""
-            }`}>
+          <div className="flex items-center justify-between py-4">
             <Link href="/" className="flex items-center">
-              <Image src="/splash.png" alt="Logo" width={320} height={100} className="w-auto h-12 md:h-32" priority />
+              <Image src="/splash.png" alt="Logo" width={400} height={120} className="w-auto h-16 md:h-36" priority />
             </Link>
-
             <div className="flex items-center gap-6">
               {!user ? (
                 <button
@@ -317,43 +310,60 @@ function HomeContent() {
               <Image src="/splash.png" alt="Logo" width={180} height={50} className="mb-10 opacity-80" />
               <p className="text-zinc-500 text-xl max-w-sm mb-10 leading-relaxed">Forging the next generation of global leaders through the power of peak communication.</p>
               <div className="flex gap-6">
-                <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center border border-white/5 hover:border-yellow-500/50 transition-colors cursor-pointer">
-                  <Globe size={20} />
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-zinc-900 flex items-center justify-center border border-white/5 hover:border-yellow-500/50 transition-colors cursor-pointer">
-                  <Command size={20} />
-                </div>
+                <Link 
+                  href="https://www.instagram.com/revial01?igsh=bWFvaWhoaHF1bjYz" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform cursor-pointer group"
+                >
+                  <Image 
+                    src="/insta.png" 
+                    alt="Instagram" 
+                    width={40} 
+                    height={40} 
+                    className="opacity-80 group-hover:opacity-100 transition-opacity"
+                  />
+                </Link>
               </div>
             </div>
 
             <div>
-              <h5 className="text-yellow-500 font-black uppercase text-[10px] tracking-[0.3em] mb-8">Navigation</h5>
+              <h5 className="text-yellow-500 font-black uppercase text-[10px] tracking-[0.3em] mb-8">Access</h5>
               <ul className="space-y-4 text-zinc-400 font-bold text-sm">
-                <li className="hover:text-white transition-colors cursor-pointer">Platform</li>
-                <li className="hover:text-white transition-colors cursor-pointer">Intelligence</li>
-                <li className="hover:text-white transition-colors cursor-pointer">Enterprise</li>
-                <li className="hover:text-white transition-colors cursor-pointer">Pricing</li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-white">Pricing: FREE (FOR NOW)</span>
+                </li>
               </ul>
             </div>
 
             <div>
               <h5 className="text-yellow-500 font-black uppercase text-[10px] tracking-[0.3em] mb-8">Legal</h5>
               <ul className="space-y-4 text-zinc-400 font-bold text-sm">
-                <li className="hover:text-white transition-colors cursor-pointer">Privacy Policy</li>
-                <li className="hover:text-white transition-colors cursor-pointer">Terms of Service</li>
-                <li className="hover:text-white transition-colors cursor-pointer">Security Protocol</li>
+                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link href="/security" className="hover:text-white transition-colors">Security Protocol</Link></li>
               </ul>
             </div>
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center pt-10 border-t border-white/5 gap-8">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
-              <p className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.5em]">©2026 REVIAL LABS INC.</p>
+              <p className="text-zinc-600 font-black text-[10px] uppercase tracking-[0.5em]">©2026 REVIAL</p>
               <div className="hidden md:block w-[1px] h-3 bg-white/10" />
               <p className="text-yellow-500/60 font-black text-[10px] uppercase tracking-[0.5em] flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-500/40" />
                 Founder: Ahsan Imam Khan
               </p>
+              <div className="hidden md:block w-[1px] h-3 bg-white/10" />
+              <Link 
+                href="https://www.webiss.shop/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-zinc-500 hover:text-white font-black text-[10px] uppercase tracking-[0.5em] transition-colors"
+              >
+                Developed by Webis Labs
+              </Link>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -362,16 +372,6 @@ function HomeContent() {
           </div>
         </div>
       </footer>
-
-      {/* Scroll to Top Button */}
-      {scrolled && (
-        <button 
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-10 right-10 w-16 h-16 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.2)] hover:scale-110 active:scale-95 transition-all z-[200] group"
-        >
-          <ArrowRight className="w-8 h-8 -rotate-90 group-hover:-translate-y-1 transition-transform" />
-        </button>
-      )}
 
       {/* High-Impact Global Styles */}
       <style dangerouslySetInnerHTML={{ __html: `
