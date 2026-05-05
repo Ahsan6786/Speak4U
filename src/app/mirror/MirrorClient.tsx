@@ -605,7 +605,7 @@ export default function MirrorClient() {
                         <Camera size={20} className="text-primary" />
                         <h3 className="font-black italic uppercase tracking-tighter text-xl">Visual Insights</h3>
                       </div>
-                      <p className="text-zinc-300 font-medium text-lg leading-relaxed italic">
+                      <p className="text-foreground/80 font-medium text-lg leading-relaxed italic">
                         "{feedback.expression_analysis || "Analyzing your visual presence..."}"
                       </p>
                     </div>
@@ -615,7 +615,7 @@ export default function MirrorClient() {
                         <Sparkles size={20} className="text-emerald-500" />
                         <h3 className="font-black italic uppercase tracking-tighter text-xl">Talking Style</h3>
                       </div>
-                      <p className="text-zinc-300 font-medium text-lg leading-relaxed italic">
+                      <p className="text-foreground/80 font-medium text-lg leading-relaxed italic">
                         "{feedback.tone_analysis || "Evaluating your vocal command..."}"
                       </p>
                     </div>
@@ -640,22 +640,22 @@ export default function MirrorClient() {
                       <h4 className="text-xs font-black uppercase tracking-[0.3em] text-red-500">Weaknesses</h4>
                       <div className="space-y-2">
                         {feedback.mistakes?.map((m: string, i: number) => (
-                          <div key={i} className="flex gap-3 text-sm text-zinc-400">
+                          <div key={i} className="flex gap-3 text-sm text-muted-foreground">
                             <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
                             <span>{m}</span>
                           </div>
-                        )) || <p className="text-xs text-zinc-600">No major weaknesses detected.</p>}
+                        )) || <p className="text-xs text-muted-foreground/60">No major weaknesses detected.</p>}
                       </div>
                     </div>
                     <div className="space-y-4 p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10">
                       <h4 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-500">How to improve</h4>
                       <div className="space-y-2">
                         {feedback.improvement_tips?.map((t: string, i: number) => (
-                          <div key={i} className="flex gap-3 text-sm text-zinc-400">
+                          <div key={i} className="flex gap-3 text-sm text-muted-foreground">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
                             <span>{t}</span>
                           </div>
-                        )) || <p className="text-xs text-zinc-600">Keep doing what you're doing!</p>}
+                        )) || <p className="text-xs text-muted-foreground/60">Keep doing what you're doing!</p>}
                       </div>
                     </div>
                   </div>

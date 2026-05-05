@@ -14,6 +14,7 @@ import { ScrollToTop } from "@/components/scroll-to-top";
 import type { Metadata, Viewport } from "next";
 
 import { ThemeColorHandler } from "@/components/ThemeColorHandler";
+import { PageTransition } from "@/components/PageTransition";
 
 export const metadata: Metadata = {
   title: "REVIAL – Daily AI Speaking Coach",
@@ -46,7 +47,9 @@ export default function RootLayout({
           <AuthProvider>
             <AppInitializer>
               <ThemeColorHandler />
-              {children}
+              <PageTransition>
+                {children}
+              </PageTransition>
               <InstallPrompt />
               <ScrollToTop />
             </AppInitializer>

@@ -142,8 +142,8 @@ export default function TeleprompterPage() {
               className="absolute inset-0 flex flex-col items-center"
             >
               {/* Focus Guides */}
-              <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-black via-black/80 to-transparent z-20 pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-black via-black/80 to-transparent z-20 pointer-events-none" />
+              <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-black via-black/90 to-transparent z-20 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-black via-black/95 to-transparent z-20 pointer-events-none" />
 
               {/* Scrolling Window Container */}
               <div 
@@ -209,7 +209,7 @@ export default function TeleprompterPage() {
 
       {/* Bottom Controls */}
       {stage === "active" && (
-        <footer className="relative z-50 p-12 flex justify-center items-center gap-8 bg-gradient-to-t from-black to-transparent">
+        <footer className="relative z-50 p-12 flex justify-center items-center gap-8 bg-gradient-to-t from-black via-black/80 to-transparent">
           <button
             onClick={restart}
             className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all text-white/60 hover:text-white"

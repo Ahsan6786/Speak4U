@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Search, Book, Sparkles, ChevronRight, Hash, X, Globe, MessageSquare } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { DICTIONARY_DATA, DictionaryWord } from "@/lib/dictionary-data";
 import { cn } from "@/lib/utils";
 
@@ -23,34 +24,51 @@ export function DailyDictionary() {
   }, [search, selectedCategory]);
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       {/* Simple Header Section */}
-      <div className="relative p-10 md:p-16 rounded-[3.5rem] bg-card/40 border border-white/5 shadow-2xl overflow-hidden ring-1 ring-white/10 text-center flex flex-col items-center">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-[60px] -ml-24 -mb-24 pointer-events-none" />
+      <div className="relative p-12 md:p-20 rounded-[4rem] bg-card/40 border border-border/50 shadow-2xl overflow-hidden text-center flex flex-col items-center">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[100px] -mr-40 -mt-40 pointer-events-none opacity-50" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] -ml-32 -mb-32 pointer-events-none opacity-30" />
 
-        <div className="relative z-10 space-y-6 max-w-2xl">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-primary/70">Elite Vocabulary</span>
+        <div className="relative z-10 space-y-8 max-w-3xl">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Elite Vocabulary</span>
+            </div>
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter italic leading-none">
+              REVIAL <span className="text-primary">LEXICON</span>
+            </h1>
+            <p className="text-muted-foreground/60 text-lg md:text-xl font-medium italic tracking-tight">
+              Master the words that command respect.
+            </p>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter italic leading-none">
-            REVIAL <span className="text-primary">Dictionary</span>
-          </h1>
-          <p className="text-muted-foreground/80 text-lg md:text-2xl font-black italic tracking-tight leading-relaxed">
-            Learn elite words, speak fluently.
-          </p>
           
-          <div className="flex flex-wrap gap-3 justify-center pt-4">
+          {/* Search Bar */}
+          <div className="relative w-full max-w-xl mx-auto group">
+            <div className="absolute inset-0 bg-primary/10 blur-xl group-hover:bg-primary/20 transition-all duration-500 rounded-full" />
+            <div className="relative flex items-center bg-background/50 backdrop-blur-xl border border-border rounded-full px-6 py-4 transition-all focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10">
+              <Search className="w-5 h-5 text-muted-foreground mr-4" />
+              <input 
+                type="text"
+                placeholder="Search words, meanings, or Hinglish context..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent border-none outline-none w-full text-foreground font-medium placeholder:text-muted-foreground/40 text-lg"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 justify-center pt-2">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={cn(
-                  "px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                  "px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all border",
                   selectedCategory === cat 
-                    ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-110" 
-                    : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                    ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-105" 
+                    : "bg-background/50 text-muted-foreground border-border hover:bg-muted/50 hover:text-foreground"
                 )}
               >
                 {cat}
@@ -66,147 +84,147 @@ export function DailyDictionary() {
           <div
             key={item.id}
             onClick={() => setSelectedWord(item)}
-            className="group cursor-pointer rounded-[2rem] bg-card/30 border-2 border-white/5 hover:border-primary/50 transition-all duration-500 hover:scale-[1.05] active:scale-[0.95] shadow-xl flex flex-col relative overflow-hidden aspect-square md:aspect-video items-center justify-center text-center p-6"
+            className="group cursor-pointer rounded-[2.5rem] bg-card/40 border border-border/50 hover:border-primary/40 transition-all duration-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg flex flex-col relative overflow-hidden aspect-square items-center justify-center text-center p-8"
           >
-            {/* Category Accent Line */}
+            {/* Category Indicator */}
             <div className={cn(
-              "absolute top-0 left-0 w-full h-1 opacity-40 group-hover:opacity-100 transition-opacity",
-              item.category === "Professional" ? "bg-blue-500" :
-              item.category === "Emotional" ? "bg-rose-500" :
-              item.category === "Social" ? "bg-emerald-500" : "bg-orange-500"
+              "absolute top-6 left-6 w-1.5 h-1.5 rounded-full",
+              item.category === "Professional" ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" :
+              item.category === "Emotional" ? "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]" :
+              item.category === "Social" ? "bg-emerald-500 shadow-[0_0_100px_rgba(16,185,129,0.5)]" : 
+              "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"
             )} />
 
-            <div className="relative z-10 space-y-4">
-              <div className={cn(
-                "mx-auto px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border w-fit transition-all",
-                item.category === "Professional" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" :
-                item.category === "Emotional" ? "bg-rose-500/10 text-rose-500 border-rose-500/20" :
-                item.category === "Social" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : 
-                "bg-orange-500/10 text-orange-500 border-orange-500/20"
-              )}>
-                {item.category}
-              </div>
-              
-              <h3 className="text-2xl md:text-3xl font-black tracking-tighter group-hover:text-primary transition-colors italic leading-none">
+            <div className="relative z-10 space-y-3">
+              <h3 className="text-2xl md:text-3xl font-black tracking-tighter group-hover:text-primary transition-colors italic leading-tight uppercase break-words hyphens-auto max-w-full">
                 {item.word}
               </h3>
-
-              <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-muted-foreground/40 group-hover:text-primary/60 transition-colors uppercase tracking-widest">
-                <span>View Meaning</span>
-                <ChevronRight className="w-3 h-3" />
-              </div>
+              <p className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.3em] group-hover:text-primary/40 transition-colors">
+                {item.hinglish}
+              </p>
             </div>
 
-            {/* Subtle Sparkle on Hover */}
-            <div className="absolute bottom-4 right-4">
-              <Sparkles className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-all duration-500 scale-0 group-hover:scale-100" />
+            {/* Hover Reveal */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
+               <div className="px-4 py-1 rounded-full bg-primary/10 border border-primary/20">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-primary">View Meaning</span>
+               </div>
             </div>
           </div>
         ))}
       </div>
 
       {filteredWords.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-20 h-20 rounded-[2rem] bg-muted flex items-center justify-center mb-6">
-            <X className="w-10 h-10 text-muted-foreground/30" />
+        <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in zoom-in duration-500">
+          <div className="w-24 h-24 rounded-[3rem] bg-muted/50 border border-border flex items-center justify-center mb-8">
+            <X className="w-10 h-10 text-muted-foreground/20" />
           </div>
-          <h2 className="text-2xl font-black text-muted-foreground italic">No words found...</h2>
-          <p className="text-muted-foreground/50 text-sm mt-2 font-medium">Try searching for something else</p>
+          <h2 className="text-3xl font-black text-muted-foreground italic tracking-tight">No results for "{search}"</h2>
+          <p className="text-muted-foreground/40 text-lg mt-3 font-medium">Try broadening your search or choosing another category.</p>
         </div>
       )}
 
       {/* Detail Modal Overlay */}
-      {selectedWord && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-500"
-          onClick={() => setSelectedWord(null)}
-        >
-          {/* Backdrop with better blur */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[12px]" />
-          
+      <AnimatePresence>
+        {selectedWord && (
           <div 
-            className="relative w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden animate-in zoom-in-95 duration-500 flex flex-col max-h-[90vh]"
-            onClick={e => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
+            onClick={() => setSelectedWord(null)}
           >
-            {/* Premium Background Accents */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[100px] -ml-32 -mb-32 pointer-events-none" />
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/80 backdrop-blur-2xl" 
+            />
+            
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-3xl bg-card border border-border rounded-[4rem] shadow-[0_40px_100px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[90vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Premium Background Accents */}
+              <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 rounded-full blur-[120px] -mr-40 -mt-40 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-[120px] -ml-40 -mb-40 pointer-events-none" />
 
-            {/* Sticky Header for Close Button */}
-            <div className="flex justify-end p-6 pb-0 relative z-30">
-              <button 
-                onClick={() => setSelectedWord(null)}
-                className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all active:scale-90"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-8 md:p-12 pt-0 space-y-12 scrollbar-hide">
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="px-3 py-1 rounded-full bg-primary/20 border border-primary/30">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic">{selectedWord.category} Usage</span>
-                  </div>
-                </div>
-                
-                <h2 className="text-6xl md:text-8xl font-black tracking-tighter italic leading-none bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
-                  {selectedWord.word}
-                </h2>
-
-                <div className="flex items-center gap-4 p-5 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 w-fit group hover:bg-emerald-500/20 transition-colors">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                    <Globe className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest">Hinglish Meaning</p>
-                    <span className="text-2xl md:text-3xl font-black text-emerald-500 italic leading-none">{selectedWord.hinglish}</span>
-                  </div>
-                </div>
+              {/* Close Button */}
+              <div className="absolute top-8 right-8 z-50">
+                <button 
+                  onClick={() => setSelectedWord(null)}
+                  className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center hover:bg-muted/80 hover:scale-110 transition-all active:scale-90 group"
+                >
+                  <X className="w-6 h-6 text-foreground group-hover:rotate-90 transition-transform duration-500" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4 p-8 rounded-[2.5rem] bg-white/[0.03] border border-white/5 hover:border-white/10 transition-colors group">
-                  <div className="flex items-center gap-2 text-muted-foreground group-hover:text-white transition-colors">
-                    <Book className="w-5 h-5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">English Definition</span>
-                  </div>
-                  <p className="text-xl font-medium leading-relaxed text-white/80 group-hover:text-white transition-colors">
-                    {selectedWord.meaning}
-                  </p>
-                </div>
-
-                <div className="space-y-4 p-8 rounded-[2.5rem] bg-primary/5 border border-primary/10 hover:border-primary/30 transition-colors group">
-                  <div className="flex items-center gap-2 text-primary">
-                    <Sparkles className="w-5 h-5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">When to use?</span>
-                  </div>
-                  <p className="text-xl font-bold italic text-primary group-hover:scale-[1.02] transition-transform origin-left">
-                    {selectedWord.usage}
-                  </p>
-                </div>
-              </div>
-
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-emerald-500/20 rounded-[3rem] blur opacity-25 group-hover:opacity-50 transition duration-1000" />
-                <div className="relative p-10 rounded-[3rem] bg-foreground text-background overflow-hidden">
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-background/10 rounded-full blur-3xl -mr-24 -mt-24" />
-                  <div className="relative z-10 space-y-6">
-                    <div className="flex items-center gap-3 text-background/40">
-                      <MessageSquare className="w-5 h-5" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Natural Example</span>
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-10 md:p-16 space-y-16 scrollbar-hide custom-scrollbar">
+                <div className="space-y-8">
+                  <div className="flex items-center gap-4">
+                    <div className="px-5 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic">{selectedWord.category} Usage</span>
                     </div>
-                    <p className="text-2xl md:text-4xl font-black italic tracking-tight leading-tight">
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h2 className="text-5xl md:text-8xl lg:text-9xl font-black tracking-tighter italic leading-[0.9] bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/60 uppercase break-words hyphens-auto">
+                      {selectedWord.word}
+                    </h2>
+                    
+                    <div className="flex items-center gap-5 p-6 rounded-[2.5rem] bg-emerald-500/10 border border-emerald-500/20 w-fit">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-xl shadow-emerald-500/30">
+                        <Globe className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-widest mb-1">In Context (Hinglish)</p>
+                        <span className="text-3xl md:text-4xl font-black text-emerald-500 italic leading-none">{selectedWord.hinglish}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6 p-10 rounded-[3rem] bg-muted/30 border border-border group hover:bg-muted/50 transition-all">
+                    <div className="flex items-center gap-3 text-muted-foreground group-hover:text-primary transition-colors">
+                      <Book className="w-6 h-6" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Formal Definition</span>
+                    </div>
+                    <p className="text-2xl font-bold leading-tight text-foreground/90 group-hover:text-foreground">
+                      {selectedWord.meaning}
+                    </p>
+                  </div>
+
+                  <div className="space-y-6 p-10 rounded-[3rem] bg-primary/5 border border-primary/10 group hover:border-primary/40 transition-all">
+                    <div className="flex items-center gap-3 text-primary">
+                      <Sparkles className="w-6 h-6" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Social Command</span>
+                    </div>
+                    <p className="text-2xl font-black italic text-primary group-hover:scale-[1.05] transition-transform origin-left leading-tight">
+                      {selectedWord.usage}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative group overflow-hidden rounded-[3.5rem]">
+                  <div className="absolute inset-0 bg-foreground group-hover:bg-foreground/90 transition-colors" />
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-background/5 rounded-full blur-[80px] -mr-32 -mt-32" />
+                  <div className="relative z-10 p-12 md:p-16 space-y-8">
+                    <div className="flex items-center gap-4 text-background/30">
+                      <MessageSquare className="w-6 h-6" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em]">Natural Application</span>
+                    </div>
+                    <p className="text-3xl md:text-5xl font-black italic tracking-tighter leading-tight text-background">
                       "{selectedWord.example}"
                     </p>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
