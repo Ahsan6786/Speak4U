@@ -45,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className={`${inter.className} min-h-full overflow-x-hidden`}>
-        <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           <AuthProvider>
             <AppInitializer>
               <ThemeColorHandler />
