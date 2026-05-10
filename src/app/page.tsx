@@ -16,6 +16,8 @@ import { useAuth } from "@/components/auth-provider";
 import { AuthModal } from "@/components/auth-modal";
 import { SignOutModal } from "@/components/sign-out-modal";
 import { cn } from "@/lib/utils";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 
 const MobileDemo = () => {
@@ -83,9 +85,31 @@ function HomeContent() {
 
 
   useEffect(() => {
-    if (mounted && !loading && user && !stay) {
-      router.push("/dashboard");
-    }
+    const checkUserAndRedirect = async () => {
+      if (mounted && !loading && user && !stay) {
+        const userDocRef = doc(db, "users", user.uid);
+        const snapshot = await getDoc(userDocRef);
+        
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (!data.onboarded) {
+            router.push("/onboarding");
+          } else {
+            router.push("/dashboard");
+          }
+        } else {
+          // New user
+          await setDoc(userDocRef, {
+            streak: 0,
+            onboarded: false,
+            lastActivityDate: ""
+          }, { merge: true });
+          router.push("/onboarding");
+        }
+      }
+    };
+
+    checkUserAndRedirect();
   }, [user, loading, mounted, router, stay]);
 
 
@@ -140,13 +164,14 @@ function HomeContent() {
             </div>
 
             <h1 className="text-5xl md:text-[110px] font-black leading-[0.95] tracking-tight mb-8 md:mb-10 uppercase italic pr-8">
-              SPEAK WITH <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-white">POWER</span> AND <br />
-              CLARITY.
+              TALK <br />
+              LESS. <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-white">IMPACT</span> <br />
+              MORE.
             </h1>
 
             <p className="text-zinc-400 text-xl md:text-2xl font-medium max-w-xl mb-12 leading-relaxed">
-              Learn to talk like a leader. Fix your tone, stop saying "um", and make people listen every time you speak.
+              REVIAL helps you sound confident, clear, and impossible to ignore.
             </p>
 
             <div className="flex flex-wrap gap-6">

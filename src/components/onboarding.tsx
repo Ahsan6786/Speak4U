@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { ChevronRight, Sparkles, Mic, User, Target, Rocket } from "lucide-react";
 import { db } from "@/lib/firebase";
@@ -11,6 +12,43 @@ interface OnboardingProps {
   user: any;
   onComplete: (name: string) => void;
 }
+
+const QUESTIONS = [
+  {
+    question: "When you have to speak English, what happens most often?",
+    options: [
+      "My mind goes blank and I forget words.",
+      "I translate from my native language in my head.",
+      "I worry about grammar and making mistakes.",
+      "I speak okay but sound robotic or flat."
+    ]
+  },
+  {
+    question: "Where do you want to use your new speaking power?",
+    options: [
+      "In meetings and professional presentations.",
+      "In daily conversations and social life.",
+      "In job interviews and career growth.",
+      "Everywhere, I want to be unstoppable."
+    ]
+  },
+  {
+    question: "How much time can you invest daily to practice?",
+    options: [
+      "5-10 minutes (Quick sessions)",
+      "15-30 minutes (Standard practice)",
+      "30+ minutes (Deep immersion)"
+    ]
+  },
+  {
+    question: "What is your current comfort level with English?",
+    options: [
+      "I understand everything but fear speaking.",
+      "I speak broken English with many pauses.",
+      "I speak okay but lack that 'boss' energy."
+    ]
+  }
+];
 
 const STEPS = [
   {
@@ -39,6 +77,15 @@ const STEPS = [
     isInput: true
   },
   {
+    id: "questions",
+    title: "Help us customize your path.",
+    subtitle: "Answer 4 quick questions to estimate your mastery timeline.",
+    icon: <Target className="w-8 h-8" />,
+    bgColor: "bg-black",
+    textColor: "text-white",
+    isQuestions: true
+  },
+  {
     id: "final",
     title: "Welcome, {name}.",
     subtitle: "Your journey to better speaking starts now. Let's go.",
@@ -52,12 +99,35 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [name, setName] = useState("");
   const [isFinishing, setIsFinishing] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const [estimatedDate, setEstimatedDate] = useState("");
 
   const step = STEPS[currentStep];
+ 
+  const handleAnswer = (option: string) => {
+    const newAnswers = [...answers];
+    newAnswers[currentQuestion] = option;
+    setAnswers(newAnswers);
+
+    if (currentQuestion < QUESTIONS.length - 1) {
+      setTimeout(() => setCurrentQuestion(currentQuestion + 1), 300); // Small delay for feel
+    } else {
+      // Last question answered, calculate date
+      const date = new Date();
+      date.setDate(date.getDate() + 60); // 2 months
+      const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+      setEstimatedDate(date.toLocaleDateString('en-US', options));
+      
+      // Advance to hide questions and show date
+      setTimeout(() => setCurrentQuestion(currentQuestion + 1), 300);
+    }
+  };
 
   const handleNext = async () => {
     if (currentStep < STEPS.length - 1) {
       if (step.id === "name" && !name.trim()) return;
+      if (step.id === "questions" && (!estimatedDate || answers.length < QUESTIONS.length)) return;
       setCurrentStep(currentStep + 1);
     } else {
       setIsFinishing(true);
@@ -65,7 +135,9 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
         await setDoc(doc(db, "users", user.uid), {
           name: name.trim(),
           onboarded: true,
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          answers: answers,
+          estimatedDate: estimatedDate
         }, { merge: true });
         onComplete(name);
       } catch (error) {
@@ -80,58 +152,109 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
         <>
           <div
             key={currentStep}
-            
-            
-            
-            
             className="flex flex-col items-center text-center"
           >
-            <div 
-              
-              
-              
-              className="w-20 h-20 rounded-3xl flex items-center justify-center bg-white/20  text-white shadow-2xl mb-12"
-            >
-              {step.icon}
-            </div>
+            {step.isQuestions ? (
+              <div className="w-full max-w-2xl mx-auto flex flex-col items-center">
+                <AnimatePresence mode="wait">
+                  {currentQuestion < QUESTIONS.length ? (
+                    <motion.div
+                      key={currentQuestion}
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -50 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-full flex flex-col items-center"
+                    >
+                      <span className="text-yellow-500 font-black text-xs uppercase tracking-[0.3em] mb-4">
+                        Question {currentQuestion + 1} of {QUESTIONS.length}
+                      </span>
+                      
+                      <h2 className="text-2xl md:text-4xl font-black text-white mb-10 italic max-w-3xl">
+                        {QUESTIONS[currentQuestion].question}
+                      </h2>
 
-            <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-8 leading-[1.1] max-w-3xl italic text-white">
-              {step.title.replace("{name}", name)}
-            </h1>
+                      <div className="grid grid-cols-1 gap-4 w-full mb-12">
+                        {QUESTIONS[currentQuestion].options.map((option, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleAnswer(option)}
+                            className={cn(
+                              "w-full text-left p-5 rounded-2xl border transition-all text-lg font-bold",
+                              answers[currentQuestion] === option
+                                ? "bg-white text-black border-white"
+                                : "bg-white/5 text-white border-white/10 hover:bg-white/10"
+                            )}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-center bg-gradient-to-br from-yellow-500/10 to-transparent p-8 rounded-[2.5rem] border border-yellow-500/20 w-full shadow-[0_0_50px_rgba(234,179,8,0.1)]"
+                    >
+                      <Sparkles className="w-8 h-8 text-yellow-500 mx-auto mb-4 animate-pulse" />
+                      <h3 className="text-white text-lg font-medium mb-4">You are on track to speak with absolute command by:</h3>
+                      <p className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200 text-4xl font-black italic mb-6">{estimatedDate}</p>
+                      <div className="flex justify-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/50" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/20" />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-            <p className="text-xl md:text-2xl text-white/80 font-medium mb-16 max-w-2xl leading-relaxed">
-              {step.subtitle}
-            </p>
-
-            {step.isInput && (
-              <div 
-                
-                
-                
-                className="w-full max-w-md mb-16"
-              >
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoFocus
-                  className="w-full bg-white/10 border-b-2 border-white/30 focus:border-white px-4 py-6 text-3xl font-bold text-center outline-none transition-all placeholder:text-white/30 text-white"
-                />
+                <button
+                  onClick={handleNext}
+                  disabled={isFinishing || !estimatedDate || answers.length < QUESTIONS.length}
+                  className="group flex items-center gap-4 bg-white text-black px-10 py-5 rounded-[2rem] font-black text-xl hover:scale-105 transition-transform disabled:opacity-50 shadow-2xl shadow-black/10 mt-8"
+                >
+                  CONTINUE
+                  <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </button>
               </div>
-            )}
+            ) : (
+              <>
+                <div className="w-20 h-20 rounded-3xl flex items-center justify-center bg-white/20  text-white shadow-2xl mb-12">
+                  {step.icon}
+                </div>
 
-            <button
-              
-              
-              
-              onClick={handleNext}
-              disabled={isFinishing || (step.id === "name" && !name.trim())}
-              className="group flex items-center gap-4 bg-white text-black px-10 py-5 rounded-[2rem] font-black text-xl hover:scale-105 transition-transform disabled:opacity-50 shadow-2xl shadow-black/10"
-            >
-              {currentStep === STEPS.length - 1 ? "START NOW" : "NEXT"}
-              <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-            </button>
+                <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-8 leading-[1.1] max-w-3xl italic text-white">
+                  {step.title.replace("{name}", name)}
+                </h1>
+
+                <p className="text-xl md:text-2xl text-white/80 font-medium mb-16 max-w-2xl leading-relaxed">
+                  {step.subtitle}
+                </p>
+
+                {step.isInput && (
+                  <div className="w-full max-w-md mb-16">
+                    <input
+                      type="text"
+                      placeholder="Enter your name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      autoFocus
+                      className="w-full bg-white/10 border-b-2 border-white/30 focus:border-white px-4 py-6 text-3xl font-bold text-center outline-none transition-all placeholder:text-white/30 text-white"
+                    />
+                  </div>
+                )}
+
+                <button
+                  onClick={handleNext}
+                  disabled={isFinishing || (step.id === "name" && !name.trim())}
+                  className="group flex items-center gap-4 bg-white text-black px-10 py-5 rounded-[2rem] font-black text-xl hover:scale-105 transition-transform disabled:opacity-50 shadow-2xl shadow-black/10"
+                >
+                  {currentStep === STEPS.length - 1 ? "START NOW" : "NEXT"}
+                  <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </>
+            )}
           </div>
         </>
       </div>

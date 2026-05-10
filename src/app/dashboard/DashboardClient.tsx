@@ -15,6 +15,7 @@ import { doc, setDoc, onSnapshot, collection, query, orderBy, limit, deleteDoc, 
 import { SignOutModal } from "@/components/sign-out-modal";
 import { SettingsModal } from "@/components/settings-modal";
 import { DailyDictionary } from "@/components/DailyDictionary";
+import { GuidedTour } from "@/components/GuidedTour";
 
 export default function DashboardClient() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function DashboardClient() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [userName, setUserName] = useState("");
+  const [tourCompleted, setTourCompleted] = useState(true);
   const [view, setView] = useState<"history" | "practice" | "dictionary">("history");
   const [sessions, setSessions] = useState<any[]>([]);
   const [assistMode, setAssistMode] = useState(false);
@@ -121,9 +123,6 @@ export default function DashboardClient() {
       return;
     }
 
-    // Warm up the microphone early for instant practice
-    requestPermission();
-
     if (!prompt) fetchNewQuestion();
 
     const userDocRef = doc(db, "users", user.uid);
@@ -153,6 +152,7 @@ export default function DashboardClient() {
         }
 
         setStreak(data.streak || 0);
+        setTourCompleted(data.tourCompleted || false);
 
         if (!data.onboarded) {
           router.push("/onboarding");
@@ -160,7 +160,7 @@ export default function DashboardClient() {
           setDataLoading(false);
         }
       } else {
-        await setDoc(userDocRef, {
+        void setDoc(userDocRef, {
           streak: 0,
           onboarded: false,
           lastActivityDate: ""
@@ -180,13 +180,6 @@ export default function DashboardClient() {
       unsubHistory();
     };
   }, [user, authLoading, router]);
-
-  // --- AUTO-REQUEST MIC PERMISSION ---
-  useEffect(() => {
-    if (!dataLoading && user) {
-      requestPermission().catch(err => console.error("Mic permission denied:", err));
-    }
-  }, [dataLoading, user, requestPermission]);
 
   useEffect(() => {
     if (isRecording && timeLeft > 0) {
@@ -602,6 +595,7 @@ export default function DashboardClient() {
 
             {/* Profile Navigation */}
             <Link
+              id="profile-nav-btn"
               href="/profile"
               className="w-12 h-12 rounded-full bg-pink-500 border-2 border-pink-600 flex items-center justify-center text-white hover:bg-pink-600 transition-all hover:scale-105 shadow-md opacity-80 hover:opacity-100"
               title="My Profile & Analytics"
@@ -624,7 +618,7 @@ export default function DashboardClient() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="w-12 h-12 rounded-full bg-orange-500 border-2 border-orange-600 text-white flex items-center justify-center font-black shadow-md opacity-90 hover:opacity-100 transition-opacity gap-1">
+            <div id="streak-indicator" className="w-12 h-12 rounded-full bg-orange-500 border-2 border-orange-600 text-white flex items-center justify-center font-black shadow-md opacity-90 hover:opacity-100 transition-opacity gap-1">
               <Flame className="w-4 h-4 fill-current flex-shrink-0" />
               <span className="text-xs">{streak}</span>
             </div>
@@ -660,6 +654,7 @@ export default function DashboardClient() {
 
                   <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto relative z-10">
                     <button
+                      id="practice-btn"
                       onClick={() => startPractice(false)}
                       className="group flex items-center justify-center gap-2 bg-white text-black px-8 py-4 rounded-full font-black text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
                     >
@@ -668,6 +663,7 @@ export default function DashboardClient() {
                       <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </button>
                     <button
+                      id="rapid-fire-btn"
                       onClick={() => startPractice(true)}
                       className="group flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-full font-black text-lg hover:bg-emerald-500 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-emerald-600/10"
                     >
@@ -711,6 +707,7 @@ export default function DashboardClient() {
 
                 {/* MIRROR MODE - NEW CARD */}
                 <Link
+                  id="mirror-mode-card"
                   href="/mirror"
                   className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-pink-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden text-left"
                 >
@@ -738,6 +735,7 @@ export default function DashboardClient() {
 
                 {/* PERFORMANCE PROFILE - GOD TIER */}
                 <Link
+                  id="profile-card"
                   href="/profile"
                   prefetch={true}
                   className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent  border border-white/10 hover:border-emerald-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden   translate-z-0"
@@ -767,6 +765,7 @@ export default function DashboardClient() {
 
                 {/* PEOPLE - DISCOVERY */}
                 <Link
+                  id="discover-people-card"
                   href="/community"
                   className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-yellow-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden translate-z-0"
                 >
@@ -794,6 +793,7 @@ export default function DashboardClient() {
 
                 {/* DAILY DICTIONARY - NEW CARD */}
                 <button
+                  id="dictionary-card"
                   onClick={() => setView("dictionary")}
                   className="group relative flex flex-col items-start p-8 rounded-[2.5rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/10 hover:border-blue-500/50 transition-all duration-700 shadow-[0_20px_40px_rgba(0,0,0,0.2)] overflow-hidden text-left"
                 >
@@ -1027,7 +1027,14 @@ export default function DashboardClient() {
           )}
         </>
       </div>
-
+      {user && (
+        <GuidedTour 
+          tourCompleted={tourCompleted} 
+          onComplete={async () => {
+            await setDoc(doc(db, "users", user.uid), { tourCompleted: true }, { merge: true });
+          }} 
+        />
+      )}
     </div>
   );
 }

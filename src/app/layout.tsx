@@ -25,10 +25,12 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "REVIAL",
   },
+  verification: {
+    google: "5ZIaSwwY3eahRfNOgAraFdfix4iUdFjDolStq3D6MLM",
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

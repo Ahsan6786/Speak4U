@@ -22,7 +22,7 @@ export default function MirrorClient() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { 
-    isRecording, transcript, audioBlob, startRecording, stopRecording, clearTranscript 
+    isRecording, transcript, audioBlob, startRecording, stopRecording, clearTranscript, requestPermission 
   } = useVoiceRecorder();
 
   // Camera State
@@ -145,7 +145,12 @@ export default function MirrorClient() {
   }, [isRecording, transcript]);
 
   // Session Management
-  const handleStart = () => {
+  const handleStart = async () => {
+    const granted = await requestPermission();
+    if (!granted) {
+      alert("Microphone access is required to practice. Please enable it in your browser settings.");
+      return;
+    }
     setHasStarted(true);
     setCountdown(3);
     setFeedback(null);

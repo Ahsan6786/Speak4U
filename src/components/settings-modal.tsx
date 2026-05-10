@@ -1,6 +1,6 @@
 "use client";
 
-import { X, User, Settings, Shield } from "lucide-react";
+import { X, User, Settings, Shield, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -71,9 +71,19 @@ export function SettingsModal({ isOpen, onClose, userName, onSave }: SettingsMod
                 <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Your data is encrypted and private.</p>
               </div>
             </div>
+
+            <button
+              onClick={() => {
+                localStorage.removeItem("revial-tour-completed");
+                window.location.reload();
+              }}
+              className="w-full mt-6 py-4 rounded-full bg-white/5 border border-white/10 text-foreground font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Sparkles size={14} /> Replay Product Tour
+            </button>
           </div>
 
-          <div className="flex flex-col gap-3 mt-10">
+          <div className="flex flex-col gap-3 mt-6">
             <button
               onClick={async () => {
                 setIsSaving(true);

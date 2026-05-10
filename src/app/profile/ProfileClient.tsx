@@ -52,6 +52,7 @@ export default function ProfileClient() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [joinDate, setJoinDate] = useState<string>("");
+  const [estimatedDate, setEstimatedDate] = useState<string>("");
 
   useEffect(() => {
     if (authLoading) return;
@@ -72,7 +73,9 @@ export default function ProfileClient() {
         ]);
 
         if (userDoc.exists()) {
-          setUserName(userDoc.data().name || "");
+          const userData = userDoc.data();
+          setUserName(userData.name || "");
+          setEstimatedDate(userData.estimatedDate || "");
         }
 
         if (user.metadata?.creationTime) {
@@ -199,30 +202,32 @@ export default function ProfileClient() {
         </div>
 
         {/* ── User Hero Card ── */}
-        <div className="relative p-8 md:p-10 rounded-[2.5rem] bg-card/60 border border-white/5 overflow-hidden shadow-xl ring-1 ring-white/5">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
+        <div className="relative p-8 md:p-10 rounded-[2.5rem] bg-[#007AFF] border border-white/10 overflow-hidden shadow-xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
           <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-[1.5rem] bg-primary text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-primary/20 flex-shrink-0">
+            <div className="w-20 h-20 rounded-[1.5rem] bg-white text-[#007AFF] flex items-center justify-center text-2xl font-black shadow-lg flex-shrink-0">
               {initials}
             </div>
-            <div className="text-center md:text-left space-y-1 flex-1">
-              <h2 className="text-3xl md:text-4xl font-black tracking-tighter italic">
+            <div className="text-center md:text-left space-y-1 flex-1 text-white">
+              <h2 className="text-3xl md:text-4xl font-black tracking-tighter italic text-white">
                 {userName || user?.displayName || "Speaker"}
               </h2>
-              <p className="text-muted-foreground font-medium">{user?.email}</p>
+              <p className="text-white/80 font-medium">{user?.email}</p>
               {joinDate && (
                 <div className="flex items-center justify-center md:justify-start gap-2 pt-1">
-                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground font-bold">Joined {joinDate}</span>
+                  <Calendar className="w-3.5 h-3.5 text-white/70" />
+                  <span className="text-xs text-white/70 font-bold">Joined {joinDate}</span>
+                </div>
+              )}
+              {estimatedDate && (
+                <div className="flex items-center justify-center md:justify-start gap-2 pt-1">
+                  <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                  <span className="text-xs text-white font-bold">Mastery: <span className="text-yellow-300">{estimatedDate}</span></span>
                 </div>
               )}
             </div>
-            {/* Trend badges */}
-            <div className="hidden md:flex gap-3">
-              <TrendBadge label="Confidence" value={confidenceTrend} />
-              <TrendBadge label="Clarity" value={clarityTrend} />
-            </div>
+
           </div>
         </div>
 

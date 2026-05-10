@@ -36,6 +36,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { motion } from "framer-motion";
 
 import { useAuth } from "@/components/auth-provider";
 import { db } from "@/lib/firebase";
@@ -58,6 +59,9 @@ interface FeedbackData {
   per_answer_summaries?: string[];
   ideal_answers?: string[];
 }
+
+let activeFetchPromise: Promise<any> | null = null;
+let activeFetchTranscript: string | null = null;
 
 export default function ResultsClient() {
   const router = useRouter();
@@ -157,35 +161,42 @@ export default function ResultsClient() {
         }
       }
 
-      if (hasFetched.current) return;
-      hasFetched.current = true;
-      setLoading(true);
-      try {
-        const endpoint = isRapidFire ? "/api/analyze-rapid" : "/api/analyze";
-        const body = isRapidFire 
-          ? { answers: rapidFireData, brutalMode }
-          : { transcript, prompt, brutalMode };
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-
-        if (response.ok) {
-          const feedback = await response.json();
+      // Use shared promise to prevent double fetch and double save in Strict Mode
+      if (activeFetchTranscript === transcript && activeFetchPromise) {
+        setLoading(true);
+        try {
+          const feedback = await activeFetchPromise;
           setData(feedback);
-          
-          sessionStorage.setItem("last_result", JSON.stringify({
-            transcript,
-            prompt,
-            data: feedback
-          }));
+          return;
+        } catch (err) {
+          console.error("Shared fetch failed:", err);
+          setError("Something went wrong.");
+          return;
+        } finally {
+          setLoading(false);
+        }
+      }
 
+      if (!activeFetchPromise || activeFetchTranscript !== transcript) {
+        activeFetchTranscript = transcript;
+        activeFetchPromise = (async () => {
+          const endpoint = isRapidFire ? "/api/analyze-rapid" : "/api/analyze";
+          const body = isRapidFire 
+            ? { answers: rapidFireData, brutalMode }
+            : { transcript, prompt, brutalMode };
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+
+          if (!response.ok) throw new Error("API failed");
+          const feedback = await response.json();
+
+          // Save to Firestore ONLY ONCE in the initiator!
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
-
-          // Compute analytics from transcript & AI scores (non-destructive extension)
           const analytics = computeSessionAnalytics(transcript || "", 60);
 
           await addDoc(collection(db, "users", user.uid, "sessions"), {
@@ -195,7 +206,6 @@ export default function ResultsClient() {
             timestamp: serverTimestamp(),
             brutalMode,
             isRapidFire,
-            // Extended fields for analytics (new, additive only)
             scores: {
               confidence_score: feedback.confidence_score ?? 0,
               clarity_score: feedback.clarity_score ?? 0,
@@ -225,7 +235,21 @@ export default function ResultsClient() {
               lastDate: todayStr
             });
           }
-        }
+
+          return feedback;
+        })();
+      }
+
+      setLoading(true);
+      try {
+        const feedback = await activeFetchPromise;
+        setData(feedback);
+        
+        sessionStorage.setItem("last_result", JSON.stringify({
+          transcript,
+          prompt,
+          data: feedback
+        }));
       } catch (err) {
         console.error("Analysis failed:", err);
         setError("Something went wrong. Please try again.");
@@ -544,37 +568,52 @@ export default function ResultsClient() {
 }
 
 function ScoreCircle({ label, score, color, delay }: { label: string, score: number, color: string, delay: number }) {
+  const dashArray = 240;
+  const dashOffset = dashArray - (dashArray * score) / 100;
+
   return (
-    <div 
-      className="flex flex-col items-center justify-center text-center py-4"
-    >
+    <div className="flex flex-col items-center justify-center text-center py-4">
       <div className="relative w-24 h-24 md:w-40 md:h-40 mb-4 group">
-        {/* Intense Ambient Glow */}
-        <div className={cn("absolute inset-0 blur-3xl opacity-30 rounded-full transition-all duration-700 group-hover:opacity-50", color.replace("text-", "bg-"))} />
+        {/* Intense Ambient Glow - Replaced blur with radial gradient to fix square artifact */}
+        <div className={cn("absolute inset-0 opacity-20 transition-all duration-700 group-hover:opacity-40", 
+          color.includes("emerald") ? "bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.5)_0%,transparent_70%)]" :
+          color.includes("pink") ? "bg-[radial-gradient(circle_at_center,rgba(236,72,153,0.5)_0%,transparent_70%)]" :
+          color.includes("orange") ? "bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.5)_0%,transparent_70%)]" :
+          "bg-[radial-gradient(circle_at_center,rgba(234,179,8,0.5)_0%,transparent_70%)]"
+        )} />
         
         <svg className="w-full h-full transform -rotate-90 relative z-10">
           {/* Background Ring */}
           <circle 
             cx="50%" cy="50%" r="38%" 
-            stroke="currentColor" strokeWidth="10" 
-            fill="transparent" className="text-white/5" 
+            stroke="currentColor" strokeWidth="8" 
+            fill="transparent" className="text-black/10 dark:text-white/5" 
           />
           {/* Progress Ring */}
-          <circle
+          <motion.circle
             cx="50%" cy="50%" r="38%" 
-            stroke="currentColor" strokeWidth="10" 
+            stroke="currentColor" strokeWidth="8" 
             strokeLinecap="round" fill="transparent"
-            strokeDasharray={240} 
-            strokeDashoffset={240 - (240 * score) / 100}
-            className={cn(color, "drop-shadow-[0_0_12px_rgba(255,255,255,0.4)] transition-all duration-1000 ease-out")}
+            strokeDasharray={dashArray} 
+            initial={{ strokeDashoffset: dashArray }}
+            animate={{ strokeDashoffset: dashOffset }}
+            transition={{ duration: 1.5, ease: "easeOut", delay }}
+            className={cn(color, "drop-shadow-[0_0_8px_currentColor]")}
           />
         </svg>
         
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-          <span className="text-2xl md:text-4xl font-black tracking-tighter">{score}%</span>
+          <motion.span 
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: delay + 0.5 }}
+            className="text-2xl md:text-4xl font-black tracking-tighter"
+          >
+            {score}%
+          </motion.span>
         </div>
       </div>
-      <span className="text-[10px] md:text-sm font-black tracking-[0.3em] uppercase text-white/50">{label}</span>
+      <span className="text-[10px] md:text-sm font-black tracking-[0.3em] uppercase text-muted-foreground">{label}</span>
     </div>
   );
 }
