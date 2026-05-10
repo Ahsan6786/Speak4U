@@ -45,6 +45,7 @@ export default function MirrorClient() {
   const [showSnapshotFlash, setShowSnapshotFlash] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [loadingPhrase, setLoadingPhrase] = useState(0);
+  const [showMicPopup, setShowMicPopup] = useState(false);
 
   const MOTIVATIONAL_PHRASES = [
     "Analyzing your presence...",
@@ -144,8 +145,8 @@ export default function MirrorClient() {
     }
   }, [isRecording, transcript]);
 
-  // Session Management
-  const handleStart = async () => {
+  const grantPermission = async () => {
+    setShowMicPopup(false);
     const granted = await requestPermission();
     if (!granted) {
       alert("Microphone access is required to practice. Please enable it in your browser settings.");
@@ -156,6 +157,11 @@ export default function MirrorClient() {
     setFeedback(null);
     setIsSaved(false);
     clearTranscript();
+  };
+
+  // Session Management
+  const handleStart = async () => {
+    setShowMicPopup(true);
   };
 
   useEffect(() => {
@@ -691,6 +697,46 @@ export default function MirrorClient() {
 
       {/* Exit Confirmation Modal */}
       <AnimatePresence>
+        {showMicPopup && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowMicPopup(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-zinc-900 border border-white/10 rounded-[3rem] p-10 text-center shadow-2xl"
+            >
+              <div className="w-20 h-20 rounded-3xl bg-[#007AFF]/10 text-[#007AFF] flex items-center justify-center mx-auto mb-8">
+                <Mic size={40} />
+              </div>
+              <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-4">Enable Microphone</h2>
+              <p className="text-zinc-400 mb-10 font-medium">
+                To practice speaking and get AI analysis, we need access to your microphone. This is required for PWAs and some browsers.
+              </p>
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={grantPermission}
+                  className="w-full py-5 rounded-full bg-[#007AFF] text-white font-black uppercase tracking-widest text-xs hover:scale-[1.02] transition-all shadow-lg shadow-[#007AFF]/20"
+                >
+                  TURN ON MIC
+                </button>
+                <button 
+                  onClick={() => setShowMicPopup(false)}
+                  className="w-full py-5 rounded-full bg-white/5 text-zinc-300 font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+                >
+                  CANCEL
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {showExitModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <motion.div 
