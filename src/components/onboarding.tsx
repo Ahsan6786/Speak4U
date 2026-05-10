@@ -113,9 +113,28 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
     if (currentQuestion < QUESTIONS.length - 1) {
       setTimeout(() => setCurrentQuestion(currentQuestion + 1), 300); // Small delay for feel
     } else {
-      // Last question answered, calculate date
+      // Last question answered, calculate date dynamically based on answers
+      let daysToAdd = 60;
+
+      // Q1: Condition
+      const q1 = newAnswers[0];
+      if (q1 === "My mind goes blank and I forget words.") daysToAdd += 15;
+      else if (q1 === "I translate from my native language in my head.") daysToAdd += 10;
+      else if (q1 === "I worry about grammar and making mistakes.") daysToAdd += 5;
+
+      // Q3: Time investment
+      const q3 = newAnswers[2];
+      if (q3 === "5-10 minutes (Quick sessions)") daysToAdd += 15;
+      else if (q3 === "30+ minutes (Deep immersion)") daysToAdd -= 15;
+
+      // Q4: Comfort level
+      const q4 = newAnswers[3];
+      if (q4 === "I understand everything but fear speaking.") daysToAdd += 5;
+      else if (q4 === "I speak broken English with many pauses.") daysToAdd += 15;
+      else if (q4 === "I speak okay but lack that 'boss' energy.") daysToAdd -= 5;
+
       const date = new Date();
-      date.setDate(date.getDate() + 60); // 2 months
+      date.setDate(date.getDate() + daysToAdd);
       const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
       setEstimatedDate(date.toLocaleDateString('en-US', options));
       

@@ -75,7 +75,16 @@ export default function ProfileClient() {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setUserName(userData.name || "");
-          setEstimatedDate(userData.estimatedDate || "");
+          
+          let estDate = userData.estimatedDate;
+          if (!estDate) {
+            // Fallback: Default to 60 days from today if missing
+            const date = new Date();
+            date.setDate(date.getDate() + 60);
+            const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            estDate = date.toLocaleDateString('en-US', options);
+          }
+          setEstimatedDate(estDate);
         }
 
         if (user.metadata?.creationTime) {
@@ -201,33 +210,44 @@ export default function ProfileClient() {
           <ThemeToggle />
         </div>
 
-        {/* ── User Hero Card ── */}
-        <div className="relative p-8 md:p-10 rounded-[2.5rem] bg-[#007AFF] border border-white/10 overflow-hidden shadow-xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
-          <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
-            {/* Avatar */}
-            <div className="w-20 h-20 rounded-[1.5rem] bg-white text-[#007AFF] flex items-center justify-center text-2xl font-black shadow-lg flex-shrink-0">
-              {initials}
-            </div>
-            <div className="text-center md:text-left space-y-1 flex-1 text-white">
-              <h2 className="text-3xl md:text-4xl font-black tracking-tighter italic text-white">
-                {userName || user?.displayName || "Speaker"}
-              </h2>
-              <p className="text-white/80 font-medium">{user?.email}</p>
-              {joinDate && (
-                <div className="flex items-center justify-center md:justify-start gap-2 pt-1">
-                  <Calendar className="w-3.5 h-3.5 text-white/70" />
-                  <span className="text-xs text-white/70 font-bold">Joined {joinDate}</span>
-                </div>
-              )}
-              {estimatedDate && (
-                <div className="flex items-center justify-center md:justify-start gap-2 pt-1">
-                  <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-                  <span className="text-xs text-white font-bold">Mastery: <span className="text-yellow-300">{estimatedDate}</span></span>
-                </div>
-              )}
+        {/* ── User Hero Card (Using card.png) ── */}
+        <div className="relative rounded-[1.5rem] overflow-hidden shadow-2xl flex flex-col justify-between group hover:scale-[1.02] transition-all duration-500 w-full max-w-md mx-auto aspect-[1.58/1] text-white">
+          {/* Background Image */}
+          <div className="absolute inset-0 bg-[url('/card.png')] bg-cover bg-center" />
+          
+          {/* Center Logo (Watermark style) */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <img src="/splash.png" alt="Revial Logo" className="w-16 h-16 md:w-20 md:h-20 opacity-30 object-contain" />
+          </div>
+          
+          {/* Overlay to ensure readability if needed */}
+          <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-all duration-500" />
+
+          {/* Content Overlay */}
+          <div className="relative z-10 p-6 md:p-8 h-full flex flex-col justify-between flex-1">
+            {/* Top Section */}
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-[0.3em] text-white/50 drop-shadow-sm mb-0.5">Card Holder</p>
+                <h3 className="text-lg md:text-xl font-bold tracking-wider text-white uppercase drop-shadow-md">
+                  {userName || user?.displayName || "Speaker"}
+                </h3>
+              </div>
+              <div />
             </div>
 
+            {/* Bottom Section: Estimation */}
+            <div className="flex justify-between items-end mt-auto mb-2 md:mb-4">
+              <div />
+              
+              <div className="text-right">
+                <p className="text-[9px] font-medium uppercase tracking-[0.3em] text-white/50 drop-shadow-sm mb-0.5">Mastery Date</p>
+                <div className="flex items-center justify-end gap-1 text-white font-bold drop-shadow-md">
+                  <Sparkles className="w-3 h-3 text-yellow-300" />
+                  <span className="text-xs md:text-sm">{estimatedDate || "July 10, 2026"}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

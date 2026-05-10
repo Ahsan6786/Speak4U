@@ -41,14 +41,6 @@ const steps: Step[] = [
     accent: "#f97316",
     icon: <Flame className="w-5 h-5" />,
     isCircle: true
-  },
-  {
-    id: "mirror-mode",
-    targetId: "mirror-mode-card",
-    title: "Mirror Mode",
-    description: "Use your camera to analyze facial expressions, eye contact, and body language while speaking.",
-    accent: "#ec4899",
-    icon: <Camera className="w-5 h-5" />
   }
 ];
 
