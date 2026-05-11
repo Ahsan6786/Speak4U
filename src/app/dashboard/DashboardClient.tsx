@@ -39,8 +39,10 @@ export default function DashboardClient() {
   const [rapidFireStep, setRapidFireStep] = useState(0);
   const [rapidFireAnswers, setRapidFireAnswers] = useState<{ q: string, a: string }[]>([]);
   const [showMicPopup, setShowMicPopup] = useState(false);
+  const [showFullscreenPopup, setShowFullscreenPopup] = useState(false);
   const searchParams = useSearchParams();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -63,6 +65,18 @@ export default function DashboardClient() {
     }
   }, [view]);
 
+  useEffect(() => {
+    const isFullscreenSupported = document.fullscreenEnabled;
+    const isFullscreen = document.fullscreenElement !== null;
+    const dismissed = localStorage.getItem("fullscreenPromptDismissed") === "true";
+
+    if (isFullscreenSupported && !isFullscreen && !dismissed) {
+      const timer = setTimeout(() => {
+        setShowFullscreenPopup(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const fetchNewQuestion = async (force = false) => {
     if (isFetchingQuestion && !force) return;
@@ -97,7 +111,8 @@ export default function DashboardClient() {
         setView("practice");
         await fetchNewQuestion();
         // AUTO START RECORDING FOR RAPID FIRE
-        setTimeout(() => {
+        if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
+        startTimeoutRef.current = setTimeout(() => {
           handleStart();
         }, 800);
       } else {
@@ -255,7 +270,23 @@ export default function DashboardClient() {
   };
 
   const handleStart = () => {
-    setShowMicPopup(true);
+    if (isRapidFire || transcript) {
+      setTimeLeft(60);
+      startRecording();
+    } else {
+      setShowMicPopup(true);
+    }
+  };
+
+  const handleFullscreen = async () => {
+    setShowFullscreenPopup(false);
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (err) {
+      console.error("Failed to enter fullscreen:", err);
+    }
   };
 
   const handleFinish = async () => {
@@ -395,7 +426,14 @@ export default function DashboardClient() {
         >
           <div className="flex items-center gap-6">
             <button
-              onClick={() => setView("history")}
+              onClick={() => {
+                if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
+                setView("history");
+                setIsRapidFire(false);
+                setShowMicPopup(false);
+                setRapidFireStep(0);
+                if (isRecording) stopRecording();
+              }}
               className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all active:scale-95"
             >
               <LayoutGrid className="w-5 h-5" />
@@ -586,8 +624,16 @@ export default function DashboardClient() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
+                if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
                 if (isRecording) stopRecording();
-                view === "practice" || view === "dictionary" ? setView("history") : router.push("/?stay=true");
+                if (view === "practice" || view === "dictionary") {
+                  setView("history");
+                  setIsRapidFire(false);
+                  setShowMicPopup(false);
+                  setRapidFireStep(0);
+                } else {
+                  router.push("/?stay=true");
+                }
               }}
               className="w-12 h-12 rounded-full bg-emerald-500 border-2 border-emerald-600 flex items-center justify-center text-white hover:bg-emerald-600 transition-all hover:scale-105 shadow-md opacity-80 hover:opacity-100"
               title="Menu"
@@ -1038,6 +1084,38 @@ export default function DashboardClient() {
           )}
         </>
       </div>
+      {showFullscreenPopup && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-zinc-900 to-black border border-white/10 rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <Command className="w-8 h-8 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black tracking-tighter italic text-white uppercase">App Experience</h2>
+              <p className="text-sm text-white/60 font-medium">
+                Go fullscreen for a more immersive, app-like practice experience.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  setShowFullscreenPopup(false);
+                  localStorage.setItem("fullscreenPromptDismissed", "true");
+                }}
+                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-colors"
+              >
+                Maybe Later
+              </button>
+              <button
+                onClick={handleFullscreen}
+                className="p-4 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
+              >
+                Go Fullscreen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showMicPopup && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-gradient-to-br from-zinc-900 to-black border border-white/10 rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl">
