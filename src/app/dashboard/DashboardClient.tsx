@@ -70,8 +70,11 @@ export default function DashboardClient() {
     const isFullscreen = document.fullscreenElement !== null;
     const dismissed = localStorage.getItem("fullscreenPromptDismissed") === "true";
 
+    console.log("Fullscreen Check:", { isFullscreenSupported, isFullscreen, dismissed });
+
     if (isFullscreenSupported && !isFullscreen && !dismissed) {
       const timer = setTimeout(() => {
+        console.log("Setting showFullscreenPopup to true");
         setShowFullscreenPopup(true);
       }, 2000);
       return () => clearTimeout(timer);
