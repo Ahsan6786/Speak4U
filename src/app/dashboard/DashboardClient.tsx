@@ -273,12 +273,8 @@ export default function DashboardClient() {
   };
 
   const handleStart = () => {
-    if (isRapidFire || transcript) {
-      setTimeLeft(60);
-      startRecording();
-    } else {
-      setShowMicPopup(true);
-    }
+    setTimeLeft(60);
+    startRecording();
   };
 
   const handleFullscreen = async () => {
@@ -1115,35 +1111,6 @@ export default function DashboardClient() {
                 className="p-4 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
               >
                 Go Fullscreen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {showMicPopup && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-zinc-900 to-black border border-white/10 rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl">
-            <div className="w-16 h-16 bg-[#007AFF]/10 rounded-full flex items-center justify-center mx-auto">
-              <Mic className="w-8 h-8 text-[#007AFF]" />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-black tracking-tighter italic text-white uppercase">Enable Microphone</h2>
-              <p className="text-sm text-white/60 font-medium">
-                To practice speaking and get AI analysis, we need access to your microphone. This is required for PWAs and some browsers.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowMicPopup(false)}
-                className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={grantPermission}
-                className="p-4 rounded-2xl bg-[#007AFF] text-white font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#007AFF]/20"
-              >
-                Turn On Mic
               </button>
             </div>
           </div>
