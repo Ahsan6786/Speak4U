@@ -65,8 +65,10 @@ export default function MirrorClient() {
   }, [isAnalyzing]);
 
   const stopCamera = useCallback(() => {
+    console.log("stopCamera called");
     setCameraActive(false);
     if (streamRef.current) {
+      console.log("Stopping tracks...");
       streamRef.current.getTracks().forEach(track => {
         try {
           track.stop();
@@ -121,6 +123,7 @@ export default function MirrorClient() {
     startCamera();
 
     return () => {
+      console.log("MirrorClient unmounting, stopping camera");
       stopCamera();
     };
   }, [user, authLoading, router, startCamera, stopCamera]);
