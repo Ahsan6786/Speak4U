@@ -68,11 +68,10 @@ export default function DashboardClient() {
   useEffect(() => {
     const isFullscreenSupported = document.fullscreenEnabled;
     const isFullscreen = document.fullscreenElement !== null;
-    const dismissed = localStorage.getItem("fullscreenPromptDismissed") === "true";
 
-    console.log("Fullscreen Check:", { isFullscreenSupported, isFullscreen, dismissed });
+    console.log("Fullscreen Check:", { isFullscreenSupported, isFullscreen });
 
-    if (isFullscreenSupported && !isFullscreen && !dismissed) {
+    if (isFullscreenSupported && !isFullscreen) {
       const timer = setTimeout(() => {
         console.log("Setting showFullscreenPopup to true");
         setShowFullscreenPopup(true);
@@ -1103,7 +1102,6 @@ export default function DashboardClient() {
               <button
                 onClick={() => {
                   setShowFullscreenPopup(false);
-                  localStorage.setItem("fullscreenPromptDismissed", "true");
                 }}
                 className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-colors"
               >
