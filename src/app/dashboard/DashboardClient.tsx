@@ -104,6 +104,7 @@ export default function DashboardClient() {
   };
 
   const startPractice = async (rapid = false) => {
+    clearTranscript();
     const granted = await requestPermission();
     if (granted) {
       if (rapid) {
@@ -435,6 +436,7 @@ export default function DashboardClient() {
                 setShowMicPopup(false);
                 setRapidFireStep(0);
                 if (isRecording) stopRecording();
+                clearTranscript();
               }}
               className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all active:scale-95"
             >
@@ -628,6 +630,7 @@ export default function DashboardClient() {
               onClick={() => {
                 if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
                 if (isRecording) stopRecording();
+                clearTranscript();
                 if (view === "practice" || view === "dictionary") {
                   setView("history");
                   setIsRapidFire(false);
